@@ -8,6 +8,12 @@
 <meta name="description" content="Armá la convocatoria, balanceá los equipos, coroná la figura y generá flyers verticales 9:16 listos para el estado de WhatsApp e Instagram Stories.">
 
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hay Fulbo">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
@@ -16,6 +22,7 @@
 <meta property="og:title" content="Hay Fulbo">
 <meta property="og:description" content="Organizador de picados con flyers verticales 9:16 automáticos.">
 <meta property="og:type" content="website">
+<meta property="og:image" content="assets/icon-512.png">
 </head>
 <body>
 
@@ -267,7 +274,44 @@
 
   </main>
 
+  <div class="install" id="install-banner" hidden>
+    <div class="install__icon"><svg><use href="#i-download"></use></svg></div>
+    <div class="install__body">
+      <b>Instalá Hay Fulbo en el celu</b>
+      <span>Se abre como una app, entra sin internet y ocupa casi nada.</span>
+    </div>
+    <div class="install__actions">
+      <button class="btn btn--primary" id="btn-install">Instalar</button>
+      <button class="link" id="btn-install-dismiss">Ahora no</button>
+    </div>
+  </div>
+
   <footer class="foot">Hay Fulbo · hecho para el picado de los amigos</footer>
+</div>
+
+<!-- ============ AVISO DE VERSIÓN NUEVA ============ -->
+<div class="updatebar" id="update-bar" hidden role="status">
+  <span>Hay una versión nueva de la app.</span>
+  <button class="btn btn--primary" id="btn-update">Actualizar</button>
+</div>
+
+<!-- ============ MODAL: CÓMO INSTALAR ============ -->
+<div class="modal" id="ios-modal" hidden>
+  <div class="modal__box modal__box--sm" role="dialog" aria-modal="true" aria-label="Cómo instalar la app">
+    <div class="modal__head">
+      <h3><svg class="ic"><use href="#i-download"></use></svg> Instalar en el celu</h3>
+      <button class="btn btn--ghost btn--icon" data-close><svg><use href="#i-x"></use></svg></button>
+    </div>
+    <p class="muted">Queda como una app más, con su ícono en la pantalla de inicio y sin barra del navegador.</p>
+    <ol class="howto">
+      <li><b>iPhone / iPad:</b> tocá <span class="kbd">Compartir</span> en la barra de Safari, elegí <span class="kbd">Agregar a inicio</span> y confirmá.</li>
+      <li><b>Android:</b> abrí el menú de tres puntos y tocá <span class="kbd">Instalar aplicación</span>.</li>
+      <li><b>Escritorio:</b> el ícono de instalar aparece a la derecha de la barra de direcciones.</li>
+    </ol>
+    <div class="modal__foot">
+      <button class="btn btn--soft btn--wide" data-close>Entendido</button>
+    </div>
+  </div>
 </div>
 
 <!-- ============ MODAL FLYER ============ -->
@@ -328,6 +372,7 @@
 <script src="js/themes.js"></script>
 <script src="js/flyers.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/pwa.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

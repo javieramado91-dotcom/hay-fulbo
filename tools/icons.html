@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Hay Fulbo · generador de iconos</title>
+<style>
+  body{background:#050b07;color:#eafff3;font-family:system-ui,sans-serif;padding:16px}
+  canvas{background:#111;margin:6px;border-radius:8px;vertical-align:top}
+  button{background:#0d2418;color:#eafff3;border:1px solid #17442c;border-radius:10px;padding:8px 12px;font:inherit}
+</style>
+</head>
+<body>
+<button id="go">Generar y guardar iconos</button>
+<div id="out"></div>
+<script>
+/* Ícono de la app: cancha nocturna + pelota con el verde de la marca. */
+function drawIcon(ctx, s, maskable) {
+  ctx.clearRect(0, 0, s, s);
+  ctx.save();
+
+  if (!maskable) {
+    const r = s * 0.22;
+    ctx.beginPath();
+    ctx.moveTo(r, 0);
+    ctx.arcTo(s, 0, s, s, r);
+    ctx.arcTo(s, s, 0, s, r);
+    ctx.arcTo(0, s, 0, 0, r);
+    ctx.arcTo(0, 0, s, 0, r);
+    ctx.closePath();
+    ctx.clip();
+  }
+
+  const bg = ctx.createLinearGradient(0, 0, 0, s);
+  bg.addColorStop(0, '#0a3a1f');
+  bg.addColorStop(0.55, '#04150c');
+  bg.addColorStop(1, '#010603');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, s, s);
+
+  /* Franjas de césped. */
+  ctx.globalAlpha = 0.05;
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i * s / 8 < s; i += 2) ctx.fillRect(0, i * s / 8, s, s / 8);
+  ctx.globalAlpha = 1;
+
+  /* Resplandor. */
+  const glow = ctx.createRadialGradient(s / 2, s * 0.42, 0, s / 2, s * 0.42, s * 0.6);
+  glow.addColorStop(0, 'rgba(34,255,136,.32)');
+  glow.addColorStop(1, 'rgba(34,255,136,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, s, s);
+
+  /* Pelota. */
+  const R = s * (maskable ? 0.26 : 0.33);
+  const cx = s / 2;
+  const cy = s / 2;
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  const ball = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+  ball.addColorStop(0, '#7dffc0');
+  ball.addColorStop(0.5, '#22ff88');
+  ball.addColorStop(1, '#00d9ff');
+  ctx.fillStyle = ball;
+  ctx.fill();
+
+  /* Paneles oscuros: pentágono central y cinco satélites. */
+  ctx.fillStyle = '#04150b';
+  const pr = R * 0.38;
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const a = -Math.PI / 2 + (i * Math.PI * 2) / 5;
+    const x = cx + Math.cos(a) * pr;
+    const y = cy + Math.sin(a) * pr;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  for (let i = 0; i < 5; i++) {
+    const a = -Math.PI / 2 + (i * Math.PI * 2) / 5 + Math.PI / 5;
+    const x = cx + Math.cos(a) * R * 0.78;
+    const y = cy + Math.sin(a) * R * 0.78;
+    ctx.beginPath();
+    for (let j = 0; j < 5; j++) {
+      const b = a + Math.PI + (j * Math.PI * 2) / 5;
+      const px = x + Math.cos(b) * R * 0.22;
+      const py = y + Math.sin(b) * R * 0.22;
+      if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+async function save(name, size, maskable) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  drawIcon(c.getContext('2d'), size, maskable);
+  c.style.width = Math.min(size, 160) + 'px';
+  document.getElementById('out').appendChild(c);
+  const r = await fetch('/__save', {
+    method: 'POST',
+    body: JSON.stringify({ name: name, dataUrl: c.toDataURL('image/png') }),
+  });
+  return (await r.json()).file;
+}
+
+document.getElementById('go').addEventListener('click', async () => {
+  document.getElementById('out').textContent = '';
+  const files = [];
+  files.push(await save('icon-192', 192, false));
+  files.push(await save('icon-512', 512, false));
+  files.push(await save('icon-maskable-512', 512, true));
+  files.push(await save('apple-touch-icon', 180, false));
+  console.log(files);
+});
+</script>
+</body>
+</html>

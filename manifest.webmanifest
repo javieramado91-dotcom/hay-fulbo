@@ -1,0 +1,21 @@
+{
+  "name": "Hay Fulbo · organizador de picados",
+  "short_name": "Hay Fulbo",
+  "description": "Armá la convocatoria, balanceá los equipos, coroná la figura y generá flyers verticales 9:16 para el grupo.",
+  "lang": "es-AR",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#04140b",
+  "theme_color": "#04140b",
+  "categories": ["sports", "utilities", "social"],
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

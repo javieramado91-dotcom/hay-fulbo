@@ -8,7 +8,7 @@
   const HF = global.HF;
 
   function boot() {
-    const required = ['util', 'store', 'teams', 'kit', 'themes', 'flyers', 'ui'];
+    const required = ['util', 'store', 'teams', 'kit', 'themes', 'flyers', 'ui', 'pwa'];
     const missing = required.filter((key) => !HF || !HF[key]);
     if (missing.length) {
       console.error('[hayfulbo] faltan módulos:', missing.join(', '));
@@ -24,6 +24,7 @@
     }
 
     HF.ui.init(session);
+    if (HF.pwa) HF.pwa.init();
 
     /* Si llega un link de convocatoria con la app ya abierta, lo aplicamos igual. */
     window.addEventListener('hashchange', () => {

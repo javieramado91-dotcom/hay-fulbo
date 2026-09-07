@@ -44,6 +44,21 @@ Hay **cinco paletas** para elegir: Noche, Fuego, Hielo, Oro y Neón.
 
 ---
 
+## Se instala en el celu
+
+Es una **PWA**: se puede instalar como una app más y funciona sin conexión.
+
+- **Android / Chrome:** aparece el cartel *"Instalá Hay Fulbo en el celu"*, o desde el menú
+  de tres puntos → **Instalar aplicación**.
+- **iPhone / iPad:** en Safari, **Compartir** → **Agregar a inicio**.
+- **Escritorio:** el ícono de instalar aparece a la derecha de la barra de direcciones.
+
+Una vez instalada abre a pantalla completa, sin barra del navegador, y el service worker
+cachea toda la app: entrás a la cancha sin señal y podés armar la lista y generar los flyers igual.
+Cuando se publica una versión nueva aparece un aviso para actualizar.
+
+---
+
 ## Cómo se usa
 
 Es un sitio estático: alcanza con abrir `index.html`. Para desarrollo conviene levantar un
@@ -67,6 +82,8 @@ No forma parte del sitio publicado.
 
 ```
 index.html            La app entera (marcado + sprite de iconos)
+manifest.webmanifest  Metadatos de la app instalable
+sw.js                 Service worker: caché offline y actualizaciones
 css/styles.css        Sistema de diseño: tokens, componentes, layout
 js/util.js            DOM, formato, almacenamiento, toasts, confeti, modales
 js/state.js           Estado único, persistencia y codec de links compartibles
@@ -75,9 +92,11 @@ js/canvas-kit.js      Primitivas de dibujo: cancha, red, camisetas, tipografía
 js/themes.js          Las cinco paletas de los flyers
 js/flyers.js          Los tres flyers 9:16
 js/ui.js              Render de pantallas y eventos
+js/pwa.js             Instalación, offline y aviso de versión nueva
 js/main.js            Arranque
 tools/serve.js        Servidor estático de desarrollo
 tools/preview.html    Banco de pruebas de flyers
+tools/icons.html      Generador de los iconos de la app
 legacy/index-v1.html  La primera versión, de un solo archivo
 ```
 
@@ -88,8 +107,9 @@ así que la app corre igual abierta desde el disco que servida por HTTP.
 
 ## Compatibilidad
 
-Navegadores modernos de escritorio y móvil. `canvas.roundRect`, `navigator.share` y
-`document.fonts` se usan con alternativa cuando no están disponibles.
+Navegadores modernos de escritorio y móvil. `canvas.roundRect`, `navigator.share`,
+`document.fonts` y el service worker se usan con alternativa cuando no están disponibles:
+sin ellos la app sigue funcionando, sólo pierde esa función puntual.
 
 ## Licencia
 
