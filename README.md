@@ -14,7 +14,7 @@ Sin backend, sin cuentas, sin build: es HTML, CSS y JavaScript plano.
 |---|---|
 | **1 · Partido** | Título, cancha, fecha, horario, formato (F5 a F11 o libre) y lo que sale el turno por persona. |
 | **2 · Lista** | Alta de jugadores con su puesto, botón **Los de siempre** para traer el plantel habitual de un toque, suplentes automáticos al pasarse del cupo, control de quién pagó, importación de listas pegadas de WhatsApp y texto listo para volver a pegar en el grupo. |
-| **3 · Equipos** | Balanceador que reparte a los titulares en dos equipos parejos y los dibuja en formación sobre la cancha. Se puede apagar con **Sin armado de equipos** cuando los equipos se hacen en la cancha: el paso desaparece y la lista lleva derecho a los puntajes. |
+| **3 · Equipos** | Balanceador que reparte a los titulares en dos equipos parejos y los dibuja en formación sobre la cancha. Abajo de todo, **Ir a puntajes y figura** sigue al paso que viene, y **Los armamos en la cancha** saltea el balanceador para siempre. |
 | **4 · Figura** | Puntaje de 1 a 10 por jugador, goles y elección de la figura del partido. |
 | **5 · Historial** | Ranking histórico por promedio, partidos jugados, goles y MVPs de todos los picados guardados. |
 
@@ -32,9 +32,11 @@ Hay **cinco paletas** para elegir: Noche, Fuego, Hielo, Oro y Neón.
 
 ## Detalles que hacen la diferencia
 
-- **Los equipos son opcionales.** Con **Sin armado de equipos** activado en el paso 1, el balanceador
-  queda afuera: la barra pasa a tener cuatro pasos y de la lista se va derecho a los puntajes y la
-  figura. La opción viaja en el link compartible y se mantiene al arrancar un partido nuevo.
+- **Los equipos son opcionales.** Si el picado se reparte en la cancha, el balanceador queda afuera:
+  la barra pasa a tener cuatro pasos y de la lista se va derecho a los puntajes y la figura. Se
+  prende desde el interruptor **Sin armado de equipos** del paso 1 o desde el botón **Los armamos en
+  la cancha** de la pantalla de equipos, y se vuelve atrás desde el aviso que queda en puntajes.
+  La opción viaja en el link compartible y se mantiene al arrancar un partido nuevo.
 - **Todo se guarda solo.** El partido en curso, las preferencias y el historial viven en `localStorage`:
   cerrás la app y volvés justo donde estabas. Al arrancar un partido nuevo se conservan el título,
   la cancha, el horario, el formato y el precio, y el plantel entra con un toque en **Los de siempre**.

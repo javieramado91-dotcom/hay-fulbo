@@ -123,6 +123,7 @@ svg{width:1em;height:1em;display:block;fill:currentColor}
   box-shadow:var(--shadow);
   display:flex;flex-direction:column;gap:13px;
 }
+.card[hidden]{display:none}
 .card__head{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .card__title{
   display:flex;align-items:center;gap:8px;
@@ -168,6 +169,14 @@ input[type=date],input[type=time]{min-height:44px}
   background:rgba(34,255,136,.1);border:1px solid rgba(34,255,136,.3);
   color:var(--accent);padding:4px 10px;border-radius:999px;white-space:nowrap;
 }
+
+/* ---------- tarjeta de ayuda ---------- */
+.card--hint{border-style:dashed;gap:10px}
+.card--hint h3{
+  font-family:var(--font-cond);font-size:17px;font-weight:700;
+  letter-spacing:.02em;color:#fff;
+}
+.card--hint b{color:var(--accent)}
 
 /* ---------- switch ---------- */
 .switch{

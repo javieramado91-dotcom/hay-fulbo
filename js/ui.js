@@ -432,6 +432,9 @@
     const m = store.match;
     const badge = $('#balance-badge');
 
+    const hint = $('#skip-hint');
+    if (hint) hint.hidden = !!m.teams;
+
     if (!m.teams) {
       badge.textContent = 'Sin armar';
       box.appendChild(
@@ -489,6 +492,14 @@
       store.commit((m) => { m.teams = HF.teams.movePlayer(m.teams, id); });
       renderTeams();
     });
+
+    bind('#btn-skip-teams', 'click', () => {
+      setSkipTeams(true);
+      setStep(4);
+      U.toast('Listo: los equipos se arman en la cancha. Lo cambiás desde Partido.', 'check');
+    });
+
+    bind('#btn-goto-ratings', 'click', () => setStep(4));
 
     bind('#btn-flyer-teams', 'click', () => {
       if (!store.match.teams) {
