@@ -5,7 +5,7 @@
    ============================================================ */
 'use strict';
 
-const VERSION = 'v6';
+const VERSION = 'v7';
 const SHELL_CACHE = 'hayfulbo-shell-' + VERSION;
 const FONT_CACHE = 'hayfulbo-fonts-' + VERSION;
 
@@ -119,16 +119,19 @@ self.addEventListener('fetch', (event) => {
  */
 async function handleNavigation(event) {
   const cache = await caches.open(SHELL_CACHE);
-  const cached = (await cache.match('./index.html')) || (await cache.match('./'));
-  if (cached) return cached;
+
+  /* Sólo las URLs que precacheamos salen del caché: cualquier otra página del
+     sitio (por ejemplo el banco de pruebas) tiene que ir a la red. */
+  const hit = await cache.match(event.request, { ignoreSearch: true });
+  if (hit) return hit;
 
   try {
     const preload = await event.preloadResponse;
     const response = preload || (await fetch(event.request));
-    if (response && response.ok) cache.put('./index.html', response.clone()).catch(() => null);
     return response;
   } catch (_) {
-    return Response.error();
+    /* Sin red devolvemos la app: es lo único que sabemos servir. */
+    return (await cache.match('./index.html')) || Response.error();
   }
 }
 

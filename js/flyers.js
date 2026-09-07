@@ -171,8 +171,8 @@
       family: K.FONT_BODY, weight: '800', size: 27, color: t.accent, align: 'center', tracking: 4,
       maxWidth: INNER - 60,
     });
-    K.text(ctx, 'HAY FULBO · ORGANIZADOR DE PICADOS', W / 2, H - 52, {
-      family: K.FONT_BODY, weight: '600', size: 19, color: K.rgba(t.sub, 0.45), align: 'center', tracking: 5,
+    K.text(ctx, 'Powered by JA', W / 2, H - 52, {
+      family: K.FONT_BODY, weight: '600', size: 18, color: K.rgba(t.sub, 0.38), align: 'center', tracking: 3,
     });
   }
 
@@ -302,7 +302,7 @@
       });
     }
 
-    paintCTA(ctx, t, missing > 0 ? 'ANOTATE EN EL GRUPO · #HAYFULBO' : 'NOS VEMOS EN LA CANCHA · #HAYFULBO');
+    paintCTA(ctx, t, missing > 0 ? 'ANOTATE EN EL GRUPO' : 'NOS VEMOS EN LA CANCHA');
   }
 
   /* ============================================================
@@ -626,7 +626,7 @@
     });
 
     paintContextLine(ctx, t, [match.titulo, match.lugar]);
-    paintCTA(ctx, t, 'FIGURA ELEGIDA POR EL GRUPO · #HAYFULBO');
+    paintCTA(ctx, t, 'FIGURA ELEGIDA POR EL GRUPO');
   }
 
   function rankLabel(score) {
