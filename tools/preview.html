@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hay Fulbo · banco de pruebas de flyers</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#050b07;color:#eafff3;font-family:Inter,system-ui,sans-serif;padding:12px}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  select,button{background:#0d2418;color:#eafff3;border:1px solid #17442c;border-radius:10px;padding:8px 10px;font:inherit}
+  canvas{width:100%;max-width:640px;display:block;border-radius:14px;border:1px solid #17442c}
+  p{font-size:12px;color:#6f8d7c}
+</style>
+</head>
+<body>
+<div class="bar">
+  <select id="kind">
+    <option value="call">Convocatoria</option>
+    <option value="teams">Formaciones</option>
+    <option value="mvp">Figura</option>
+  </select>
+  <select id="theme"></select>
+  <button id="seed">Cargar datos de ejemplo</button>
+</div>
+<canvas id="c" width="1080" height="1920"></canvas>
+<p>Banco de pruebas: usa el partido guardado en este navegador. No forma parte de la app publicada.</p>
+
+<script src="../js/util.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/teams.js"></script>
+<script src="../js/canvas-kit.js"></script>
+<script src="../js/themes.js"></script>
+<script src="../js/flyers.js"></script>
+<script>
+const store = HF.store;
+store.load();
+
+const themeSel = document.getElementById('theme');
+HF.themes.list.forEach(t => themeSel.appendChild(new Option(t.name, t.id)));
+themeSel.value = store.prefs.theme || 'noche';
+
+async function draw(){
+  await HF.flyers.render(document.getElementById('kind').value, document.getElementById('c'), store, themeSel.value);
+}
+
+document.getElementById('kind').addEventListener('change', draw);
+themeSel.addEventListener('change', draw);
+
+document.getElementById('seed').addEventListener('click', () => {
+  store.reset(false);
+  store.commit(m => {
+    m.titulo = 'Clásico de los Jueves';
+    m.lugar = 'El Potrero — Sintético 3';
+    m.fecha = '2026-09-10';
+    m.hora = '21:30';
+    m.costo = 48000;
+    m.totalPlayers = 10;
+  });
+  [['Nico','ARQ'],['Mati','DEF'],['Franco','MED'],['Gonza','DEL'],['Tincho','DEF'],
+   ['Rodri','MED'],['Juanma','ARQ'],['Lucho','DEL'],['Seba','MED'],['Agustín','DEL'],['Pipa','DEF']]
+    .forEach(([n,p]) => store.addPlayer(n, p));
+  store.commit(m => {
+    m.players.forEach((pl, i) => { pl.score = 4 + ((i * 3) % 7); pl.goals = i % 3 === 0 ? (i % 4) : 0; });
+    const t = HF.teams.balance(store.starters);
+    m.teams = { a: t.a, b: t.b };
+  });
+  draw();
+});
+
+window.savePNG = async (name) => {
+  await draw();
+  const r = await fetch('/__save', { method: 'POST', body: JSON.stringify({ name, dataUrl: document.getElementById('c').toDataURL('image/png') }) });
+  return (await r.json()).file;
+};
+
+draw();
+</script>
+</body>
+</html>

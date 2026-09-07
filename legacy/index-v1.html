@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hay Fulbo - Organizador de Partidos y Flyers</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            grass: {
+              800: '#0c2e17',
+              900: '#071d0e',
+              950: '#041309',
+            },
+            pitch: '#15803d',
+            accent: '#22c55e',
+            gold: '#fbbf24',
+          },
+          fontFamily: {
+            sport: ['Impact', 'Arial Black', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Teko:wght@600;700&family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(circle at top, #0e3d1e 0%, #06180c 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-teko {
+      font-family: 'Teko', sans-serif;
+    }
+    /* Cancha estilizada */
+    .cancha-bg {
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(21, 128, 61, 0.9) 0px,
+        rgba(21, 128, 61, 0.9) 35px,
+        rgba(16, 110, 52, 0.9) 35px,
+        rgba(16, 110, 52, 0.9) 70px
+      );
+      position: relative;
+    }
+    .cancha-lines {
+      background-image: 
+        radial-gradient(circle at center, transparent 40px, rgba(255,255,255,0.4) 40px, rgba(255,255,255,0.4) 42px, transparent 42px),
+        linear-gradient(to bottom, rgba(255,255,255,0.4) 2px, transparent 2px);
+      background-position: center center;
+    }
+    /* Ocultar flechas en input number */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+  </style>
+</head>
+<body class="p-3 sm:p-5 flex flex-col items-center">
+
+  <!-- TOAST DE NOTIFICACIONES -->
+  <div id="toast" class="fixed top-4 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 bg-neutral-900/95 border border-emerald-500 text-white pointer-events-none transition-all duration-300 transform -translate-y-16 opacity-0">
+    <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-xl"></i>
+    <span id="toast-msg" class="text-sm font-semibold tracking-wide">Acción realizada</span>
+  </div>
+
+  <!-- CANVAS DE CONFETI -->
+  <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full hidden"></canvas>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <div class="w-full max-w-md mx-auto flex flex-col min-h-[92vh]">
+    
+    <!-- HEADER GENERAL -->
+    <header class="text-center mb-4">
+      <div class="inline-flex items-center justify-center gap-2 bg-emerald-950/80 border border-emerald-500/40 px-4 py-1.5 rounded-full shadow-lg">
+        <i class="fa-solid fa-futbol text-emerald-400 animate-spin" style="animation-duration: 8s;"></i>
+        <h1 class="font-teko text-3xl sm:text-4xl uppercase tracking-wider text-emerald-400 m-0 leading-none">HAY FULBO</h1>
+        <span class="text-xs bg-emerald-500 text-black font-black px-2 py-0.5 rounded-full">PRO</span>
+      </div>
+      <p class="text-xs text-emerald-200/70 mt-1">Armá tu partido, generá el flyer y votá a la figura</p>
+    </header>
+
+    <!-- NAVEGACIÓN POR PASOS -->
+    <div class="flex items-center justify-between mb-4 px-2">
+      <button id="step-btn-1" onclick="switchStep(1)" class="flex-1 text-center pb-2 border-b-2 border-emerald-400 text-emerald-300 font-bold text-xs flex flex-col items-center gap-1 transition-all">
+        <span class="w-6 h-6 rounded-full bg-emerald-500 text-black flex items-center justify-center text-xs font-black">1</span>
+        <span>Configurar</span>
+      </button>
+      <button id="step-btn-2" onclick="switchStep(2)" class="flex-1 text-center pb-2 border-b-2 border-neutral-800 text-neutral-400 font-medium text-xs flex flex-col items-center gap-1 transition-all">
+        <span class="w-6 h-6 rounded-full bg-neutral-800 text-neutral-300 flex items-center justify-center text-xs font-bold">2</span>
+        <span>Lista en Vivo</span>
+      </button>
+      <button id="step-btn-3" onclick="switchStep(3)" class="flex-1 text-center pb-2 border-b-2 border-neutral-800 text-neutral-400 font-medium text-xs flex flex-col items-center gap-1 transition-all">
+        <span class="w-6 h-6 rounded-full bg-neutral-800 text-neutral-300 flex items-center justify-center text-xs font-bold">3</span>
+        <span>Post-Partido</span>
+      </button>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- PASO 1: CONFIGURAR PARTIDO (CAMPOS VACÍOS POR DEFECTO)   -->
+    <!-- ======================================================== -->
+    <section id="step-1" class="space-y-4 flex-1">
+      <div class="bg-neutral-900/90 border border-emerald-900/60 rounded-3xl p-5 shadow-2xl backdrop-blur-sm">
+        
+        <h2 class="text-lg font-bold text-white flex items-center gap-2 mb-4 border-b border-neutral-800 pb-2">
+          <i class="fa-solid fa-sliders text-emerald-400"></i>
+          Datos del Partido
+        </h2>
+
+        <div class="space-y-4">
+          <!-- Cancha / Lugar -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-emerald-300/80 mb-1.5">
+              <i class="fa-solid fa-location-dot mr-1"></i> Nombre de la Cancha / Lugar
+            </label>
+            <input type="text" id="input-lugar" value="" placeholder="Ej: Cancha El Potrero, Sintético 5..."
+              class="w-full bg-neutral-950 border border-neutral-700 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-neutral-500 outline-none transition">
+          </div>
+
+          <!-- Nombre del partido / Desafío -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-emerald-300/80 mb-1.5">
+              <i class="fa-solid fa-trophy mr-1"></i> Título del Partido (Opcional)
+            </label>
+            <input type="text" id="input-titulo" value="" placeholder="Ej: Desafío de los Jueves, Amigos FC..."
+              class="w-full bg-neutral-950 border border-neutral-700 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-neutral-500 outline-none transition">
+          </div>
+
+          <!-- Fecha y Horario -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-emerald-300/80 mb-1.5">
+                <i class="fa-solid fa-calendar-day mr-1"></i> Fecha
+              </label>
+              <input type="date" id="input-fecha"
+                class="w-full bg-neutral-950 border border-neutral-700 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-sm text-white outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-emerald-300/80 mb-1.5">
+                <i class="fa-solid fa-clock mr-1"></i> Horario
+              </label>
+              <input type="time" id="input-hora" value="" placeholder="20:00"
+                class="w-full bg-neutral-950 border border-neutral-700 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-sm text-white outline-none">
+            </div>
+          </div>
+
+          <!-- SELECTOR DE CANTIDAD DE JUGADORES -->
+          <div class="pt-2 border-t border-neutral-800">
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs font-bold uppercase tracking-wider text-emerald-300">
+                <i class="fa-solid fa-users mr-1"></i> Cantidad de Jugadores
+              </label>
+              <span id="player-preset-desc" class="text-xs font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-700/50 px-2 py-0.5 rounded-full">
+                Fútbol 5 (10 Jugadores)
+              </span>
+            </div>
+
+            <!-- Botones de Acceso Rápido -->
+            <div class="grid grid-cols-5 gap-1.5 mb-3">
+              <button type="button" onclick="setTotalPlayers(10)" class="preset-btn bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs flex flex-col items-center hover:bg-emerald-500 active:scale-95 transition" data-val="10">
+                <span>F5</span>
+                <span class="text-[10px] opacity-80">10</span>
+              </button>
+              <button type="button" onclick="setTotalPlayers(12)" class="preset-btn bg-neutral-800 text-neutral-300 font-bold py-2 rounded-xl text-xs flex flex-col items-center hover:bg-neutral-700 active:scale-95 transition" data-val="12">
+                <span>F6</span>
+                <span class="text-[10px] opacity-80">12</span>
+              </button>
+              <button type="button" onclick="setTotalPlayers(14)" class="preset-btn bg-neutral-800 text-neutral-300 font-bold py-2 rounded-xl text-xs flex flex-col items-center hover:bg-neutral-700 active:scale-95 transition" data-val="14">
+                <span>F7</span>
+                <span class="text-[10px] opacity-80">14</span>
+              </button>
+              <button type="button" onclick="setTotalPlayers(16)" class="preset-btn bg-neutral-800 text-neutral-300 font-bold py-2 rounded-xl text-xs flex flex-col items-center hover:bg-neutral-700 active:scale-95 transition" data-val="16">
+                <span>F8</span>
+                <span class="text-[10px] opacity-80">16</span>
+              </button>
+              <button type="button" onclick="setTotalPlayers(22)" class="preset-btn bg-neutral-800 text-neutral-300 font-bold py-2 rounded-xl text-xs flex flex-col items-center hover:bg-neutral-700 active:scale-95 transition" data-val="22">
+                <span>F11</span>
+                <span class="text-[10px] opacity-80">22</span>
+              </button>
+            </div>
+
+            <!-- Selector Numérico con + y - -->
+            <div class="flex items-center justify-between bg-neutral-950 border border-neutral-800 rounded-2xl p-1.5">
+              <button type="button" onclick="adjustTotalPlayers(-1)" class="w-12 h-11 bg-neutral-800 hover:bg-neutral-700 active:bg-neutral-600 rounded-xl text-xl font-bold flex items-center justify-center text-white transition">
+                <i class="fa-solid fa-minus"></i>
+              </button>
+
+              <div class="text-center px-4">
+                <input type="number" id="input-total-jugadores" value="10" min="2" max="40" onchange="onPlayerCountManualChange()"
+                  class="w-16 bg-transparent text-center font-teko text-4xl text-emerald-400 font-bold outline-none leading-none">
+                <span class="block text-[10px] uppercase font-bold text-neutral-400 -mt-1">Jugadores en total</span>
+              </div>
+
+              <button type="button" onclick="adjustTotalPlayers(1)" class="w-12 h-11 bg-neutral-800 hover:bg-neutral-700 active:bg-neutral-600 rounded-xl text-xl font-bold flex items-center justify-center text-white transition">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTÓN SIGUIENTE -->
+        <button type="button" onclick="goToStep2()" 
+          class="w-full mt-6 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.98] text-black font-black uppercase text-base tracking-wider py-3.5 rounded-2xl shadow-xl flex items-center justify-center gap-2 transition">
+          <span>Abrir Convocatoria</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- PASO 2: CONVOCATORIA EN VIVO                             -->
+    <!-- ======================================================== -->
+    <section id="step-2" class="space-y-4 flex-1 hidden">
+      
+      <!-- CONTADOR DE FALTANTES & BANNER DE ESTADO -->
+      <div id="status-card" class="bg-neutral-900 border border-amber-500/40 rounded-3xl p-4 shadow-xl relative overflow-hidden">
+        <div class="flex items-center justify-between">
+          <div>
+            <p id="counter-title" class="text-xs uppercase font-bold tracking-wider text-amber-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-triangle-exclamation animate-bounce"></i>
+              <span id="counter-status-text">Convocatoria abierta</span>
+            </p>
+            <h3 id="counter-faltan" class="font-teko text-4xl text-white font-bold leading-none mt-0.5">
+              FALTAN <span id="num-faltan" class="text-amber-400">10</span> JUGADORES
+            </h3>
+          </div>
+          <div class="text-right">
+            <span class="text-xs text-neutral-400 block font-medium">Cupos</span>
+            <span class="font-teko text-3xl font-bold text-white leading-none">
+              <span id="num-anotados" class="text-emerald-400">0</span>/<span id="num-total">10</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Barra de progreso -->
+        <div class="w-full bg-neutral-950 h-3 rounded-full overflow-hidden mt-3 border border-neutral-800">
+          <div id="progress-bar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full w-0 transition-all duration-300"></div>
+        </div>
+      </div>
+
+      <!-- AGREGAR JUGADORES -->
+      <div class="bg-neutral-900/90 border border-neutral-800 rounded-3xl p-4 shadow-xl">
+        <label class="block text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+          <i class="fa-solid fa-user-plus mr-1"></i> Anotar Jugador
+        </label>
+        
+        <form onsubmit="handlePlayerSubmit(event)" class="flex gap-2">
+          <input type="text" id="input-nuevo-jugador" placeholder="Nombre o apodo del jugador..." autocomplete="off"
+            class="flex-1 bg-neutral-950 border border-neutral-700 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-neutral-500 outline-none transition">
+          <button type="submit" class="bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-black font-bold px-4 py-2.5 rounded-xl text-sm flex items-center gap-1 transition">
+            <i class="fa-solid fa-plus"></i>
+            <span class="hidden sm:inline">Sumar</span>
+          </button>
+        </form>
+
+        <!-- Botones de atajo -->
+        <div class="flex items-center justify-between mt-3 pt-3 border-t border-neutral-800 text-xs">
+          <button type="button" onclick="openPasteModal()" class="text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 font-semibold">
+            <i class="fa-brands fa-whatsapp text-sm"></i> Pegar lista de WhatsApp
+          </button>
+          <button type="button" onclick="clearAllPlayers()" class="text-red-400/80 hover:text-red-400 flex items-center gap-1 font-semibold">
+            <i class="fa-solid fa-trash-can"></i> Vaciar
+          </button>
+        </div>
+      </div>
+
+      <!-- LISTADO DE JUGADORES -->
+      <div class="bg-neutral-900/90 border border-neutral-800 rounded-3xl p-4 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-sm font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-clipboard-list text-emerald-400"></i>
+            Nómina de Convocados
+          </h4>
+          <span id="badge-cupo" class="text-[11px] bg-neutral-800 px-2.5 py-0.5 rounded-full text-neutral-300 font-bold">
+            0 en lista
+          </span>
+        </div>
+
+        <div id="players-list-container" class="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+          <!-- Jugadores renderizados dinámicamente -->
+        </div>
+      </div>
+
+      <!-- BOTONES DE ACCIÓN RÁPIDA: FLYER Y WHATSAPP -->
+      <div class="grid grid-cols-2 gap-2">
+        <button type="button" onclick="showFlyerModal()" class="bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-3 px-3 rounded-2xl text-xs flex items-center justify-center gap-2 border border-neutral-700 transition active:scale-95">
+          <i class="fa-solid fa-image text-emerald-400 text-sm"></i>
+          <span>Ver / Descargar Flyer</span>
+        </button>
+
+        <button type="button" onclick="copyWhatsAppList()" class="bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 font-bold py-3 px-3 rounded-2xl text-xs flex items-center justify-center gap-2 border border-emerald-600/50 transition active:scale-95">
+          <i class="fa-brands fa-whatsapp text-emerald-400 text-base"></i>
+          <span>Copiar p/ WhatsApp</span>
+        </button>
+      </div>
+
+      <!-- BOTÓN FINALIZAR / ESTAMOS TODOS -->
+      <div class="pt-1">
+        <button type="button" id="btn-finalizar" onclick="celebrateAndFinish()" 
+          class="w-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-400 hover:opacity-90 active:scale-[0.98] text-black font-black uppercase text-sm tracking-wider py-4 rounded-2xl shadow-xl flex items-center justify-center gap-2 transition">
+          <i class="fa-solid fa-bullhorn text-base"></i>
+          <span>¡Estamos Todos! Finalizar Convocatoria</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- PASO 3: POST-PARTIDO, PUNTAJES Y ELECCIÓN DE FIGURA      -->
+    <!-- ======================================================== -->
+    <section id="step-3" class="space-y-4 flex-1 hidden">
+      
+      <!-- ENCABEZADO POST-PARTIDO -->
+      <div class="bg-neutral-900 border border-emerald-900/60 rounded-3xl p-4 shadow-xl">
+        <h3 class="font-teko text-3xl text-emerald-400 leading-none">POST-PARTIDO & RENDIMIENTO</h3>
+        <p class="text-xs text-neutral-300 mt-1">
+          Calificá a cada jugador (1 al 10) y coroná a la <strong class="text-amber-400">Figura del Partido</strong> con medalla dorada.
+        </p>
+      </div>
+
+      <!-- LISTA DE CALIFICACIONES -->
+      <div id="ratings-container" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+        <!-- Render dinámico de cada jugador con su selector de puntaje -->
+      </div>
+
+      <!-- BOTÓN DE VER PODIO Y RANKING -->
+      <div class="pt-2">
+        <button type="button" onclick="showPodiumModal()" class="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 active:scale-[0.98] text-black font-black uppercase text-base tracking-wider py-3.5 rounded-2xl shadow-xl flex items-center justify-center gap-2 transition">
+          <i class="fa-solid fa-medal text-lg"></i>
+          <span>Ver Podio & Flyer de la Figura</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="text-center py-4 text-xs text-emerald-500/40">
+      Hay Fulbo &bull; La pasión del picado entre amigos
+    </footer>
+  </div>
+
+  <!-- MODAL: FLYER DE CONVOCATORIA -->
+  <div id="flyer-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-3 hidden">
+    <div class="bg-neutral-950 border border-emerald-700/60 rounded-3xl max-w-sm w-full p-4 flex flex-col max-h-[94vh] shadow-2xl">
+      
+      <div class="flex items-center justify-between pb-2 border-b border-neutral-800">
+        <h3 class="font-teko text-2xl text-emerald-400 leading-none tracking-wider">FLYER OFICIAL DE CONVOCATORIA</h3>
+        <button onclick="closeFlyerModal()" class="text-neutral-400 hover:text-white text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- CONTENEDOR VISUAL DEL FLYER (CANCHA) -->
+      <div id="flyer-preview-box" class="my-3 rounded-2xl overflow-hidden shadow-2xl border-2 border-emerald-500/50 flex-1 flex flex-col justify-between cancha-bg p-4 relative text-center">
+        <div class="absolute inset-0 cancha-lines pointer-events-none opacity-40"></div>
+        
+        <div class="relative z-10">
+          <span class="inline-block bg-black/70 backdrop-blur-sm border border-emerald-400/50 text-emerald-400 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow">
+            ⚽ PARTIDO CONFIRMADO
+          </span>
+          <h2 id="flyer-card-title" class="font-teko text-3xl font-black text-white leading-none mt-1 drop-shadow-md uppercase">
+            PARTIDO
+          </h2>
+          <p id="flyer-card-cancha" class="text-xs font-bold text-emerald-200 drop-shadow flex items-center justify-center gap-1">
+            <i class="fa-solid fa-location-dot"></i> Cancha por definir
+          </p>
+          <p id="flyer-card-datetime" class="text-[11px] font-semibold text-emerald-300/90">
+            Hoy &bull; --:--
+          </p>
+        </div>
+
+        <div class="my-2 relative z-10">
+          <div id="flyer-badge-status" class="inline-block bg-amber-500 text-black font-black text-xs uppercase px-3 py-1 rounded-full shadow-lg">
+            ¡CONVOCATORIA ABIERTA!
+          </div>
+        </div>
+
+        <div id="flyer-card-players" class="relative z-10 bg-black/60 backdrop-blur-sm border border-white/10 rounded-xl p-2.5 max-h-48 overflow-y-auto text-left grid grid-cols-2 gap-1 text-[11px]">
+        </div>
+
+        <div class="relative z-10 pt-2 flex items-center justify-between text-[10px] text-emerald-200/80 font-bold border-t border-white/20">
+          <span>#HAYFULBO</span>
+          <span id="flyer-footer-cupos">0/10 CONFIRMADOS</span>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <button type="button" onclick="downloadConvocatoriaFlyer()" class="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-black font-black uppercase text-xs py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition">
+          <i class="fa-solid fa-download text-sm"></i>
+          <span>Descargar Flyer HD (Imagen)</span>
+        </button>
+        <button type="button" onclick="closeFlyerModal()" class="w-full bg-neutral-900 text-neutral-400 font-bold text-xs py-2 rounded-xl">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PODIO POST-PARTIDO Y FIGURA -->
+  <div id="podium-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-3 hidden">
+    <div class="bg-neutral-950 border border-amber-600/60 rounded-3xl max-w-sm w-full p-4 flex flex-col max-h-[94vh] shadow-2xl">
+      
+      <div class="flex items-center justify-between pb-2 border-b border-neutral-800">
+        <h3 class="font-teko text-2xl text-amber-400 leading-none tracking-wider">PREMIACIÓN & PODIO</h3>
+        <button onclick="closePodiumModal()" class="text-neutral-400 hover:text-white text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="podium-preview-box" class="my-3 rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-500/60 bg-gradient-to-b from-neutral-900 via-neutral-950 to-black p-4 text-center relative flex-1 flex flex-col justify-between">
+        <div>
+          <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 text-neutral-950 text-2xl shadow-xl shadow-amber-500/20 mb-1 animate-pulse">
+            <i class="fa-solid fa-medal"></i>
+          </div>
+          <span class="block font-teko text-xl tracking-widest text-amber-400 font-bold">LA FIGURA DEL PARTIDO</span>
+          <h2 id="mvp-name-card" class="font-teko text-4xl text-white font-black uppercase leading-none tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500">
+            JUGADOR
+          </h2>
+          <span id="mvp-score-badge" class="inline-block bg-amber-500/20 border border-amber-400/50 text-amber-300 text-xs font-black px-3 py-0.5 rounded-full mt-1">
+            Puntaje: 10/10 &bull; Crack Total
+          </span>
+        </div>
+
+        <div class="my-3 bg-neutral-900/90 border border-neutral-800 rounded-xl p-2.5 max-h-44 overflow-y-auto text-left space-y-1 text-xs">
+          <p class="text-[10px] uppercase font-bold text-neutral-400 pb-1 border-b border-neutral-800 flex justify-between">
+            <span>Ranking de Jugadores</span>
+            <span>Nota</span>
+          </p>
+          <div id="podium-ranking-list" class="space-y-1">
+          </div>
+        </div>
+
+        <div class="text-[10px] text-neutral-400 font-medium pt-1 border-t border-neutral-800 flex justify-between">
+          <span id="podium-footer-cancha">Cancha</span>
+          <span class="text-amber-400 font-bold">HAY FULBO APP</span>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <button type="button" onclick="downloadPodiumFlyer()" class="w-full bg-gradient-to-r from-amber-500 to-yellow-400 active:scale-95 text-black font-black uppercase text-xs py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition">
+          <i class="fa-solid fa-download text-sm"></i>
+          <span>Descargar Flyer de la Figura</span>
+        </button>
+        <button type="button" onclick="closePodiumModal()" class="w-full bg-neutral-900 text-neutral-400 font-bold text-xs py-2 rounded-xl">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PEGAR LISTA DESDE WHATSAPP -->
+  <div id="paste-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-neutral-900 border border-emerald-700/60 rounded-3xl max-w-sm w-full p-5 shadow-2xl">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-bold text-white text-sm flex items-center gap-2">
+          <i class="fa-brands fa-whatsapp text-emerald-400 text-lg"></i>
+          Pegar texto de WhatsApp
+        </h3>
+        <button onclick="closePasteModal()" class="text-neutral-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <p class="text-xs text-neutral-400 mb-3">
+        Pegá el mensaje completo del grupo (ej: "1. Nico, 2- Juan, 3. Lucas..."). La app extraerá los nombres automáticamente.
+      </p>
+      <textarea id="paste-textarea" rows="6" placeholder="1. Nico&#10;2. Matias&#10;3. Franco&#10;4. Gonzalo..."
+        class="w-full bg-neutral-950 border border-neutral-700 focus:border-emerald-500 rounded-xl p-3 text-xs text-white outline-none resize-none mb-3"></textarea>
+      <div class="flex gap-2">
+        <button type="button" onclick="processPastedText()" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs py-2.5 rounded-xl transition">
+          Procesar y Agregar
+        </button>
+        <button type="button" onclick="closePasteModal()" class="px-4 bg-neutral-800 text-neutral-300 font-bold text-xs py-2.5 rounded-xl">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ESTADO INICIAL (100% LIMPIO SIN DATOS FALSOS)
+    const appState = {
+      lugar: "",
+      titulo: "",
+      fecha: "",
+      hora: "",
+      totalPlayers: 10,
+      players: [],
+      selectedMvpId: null
+    };
+
+    // INICIALIZACIÓN AL CARGAR LA PÁGINA
+    window.onload = function() {
+      // Asignar fecha de hoy automáticamente
+      const today = new Date().toISOString().split('T')[0];
+      const dateInput = document.getElementById('input-fecha');
+      if (dateInput) {
+        dateInput.value = today;
+        appState.fecha = today;
+      }
+
+      updatePlayerPresetButtons();
+      renderPlayersList();
+      updateStatusBadge();
+    };
+
+    // NAVEGACIÓN ENTRE PASOS
+    function switchStep(stepNum) {
+      const step1 = document.getElementById('step-1');
+      const step2 = document.getElementById('step-2');
+      const step3 = document.getElementById('step-3');
+
+      if (step1) step1.classList.add('hidden');
+      if (step2) step2.classList.add('hidden');
+      if (step3) step3.classList.add('hidden');
+
+      [1, 2, 3].forEach(num => {
+        const btn = document.getElementById(`step-btn-${num}`);
+        if (btn) {
+          const badge = btn.querySelector('span');
+          if (num === stepNum) {
+            btn.classList.add('border-emerald-400', 'text-emerald-300');
+            btn.classList.remove('border-neutral-800', 'text-neutral-400');
+            if (badge) {
+              badge.classList.add('bg-emerald-500', 'text-black');
+              badge.classList.remove('bg-neutral-800', 'text-neutral-300');
+            }
+          } else {
+            btn.classList.remove('border-emerald-400', 'text-emerald-300');
+            btn.classList.add('border-neutral-800', 'text-neutral-400');
+            if (badge) {
+              badge.classList.remove('bg-emerald-500', 'text-black');
+              badge.classList.add('bg-neutral-800', 'text-neutral-300');
+            }
+          }
+        }
+      });
+
+      const currentStep = document.getElementById(`step-${stepNum}`);
+      if (currentStep) currentStep.classList.remove('hidden');
+
+      if (stepNum === 3) {
+        prepareRatingsStep();
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // AVANZAR DEL PASO 1 AL PASO 2
+    function goToStep2() {
+      try {
+        const lugarInput = document.getElementById('input-lugar');
+        const tituloInput = document.getElementById('input-titulo');
+        const fechaInput = document.getElementById('input-fecha');
+        const horaInput = document.getElementById('input-hora');
+        const totalInput = document.getElementById('input-total-jugadores');
+
+        appState.lugar = lugarInput ? lugarInput.value.trim() : "";
+        appState.titulo = tituloInput ? tituloInput.value.trim() : "";
+        appState.fecha = fechaInput ? fechaInput.value : "";
+        appState.hora = horaInput ? horaInput.value : "";
+        
+        let total = totalInput ? parseInt(totalInput.value, 10) : 10;
+        if (isNaN(total) || total < 2) total = 10;
+        appState.totalPlayers = total;
+
+        updateStatusBadge();
+        renderPlayersList();
+        switchStep(2);
+        showToast("Convocatoria abierta. Podés sumar los jugadores.", "check");
+      } catch (err) {
+        console.error("Error al avanzar de paso:", err);
+        showToast("Ocurrió un error. Verificá los campos.", "error");
+      }
+    }
+
+    // MANEJO DE CANTIDAD DE JUGADORES
+    function setTotalPlayers(qty) {
+      const num = parseInt(qty, 10);
+      if (isNaN(num)) return;
+      appState.totalPlayers = num;
+      const input = document.getElementById('input-total-jugadores');
+      if (input) input.value = num;
+      updatePlayerPresetButtons();
+      updateStatusBadge();
+    }
+
+    function adjustTotalPlayers(delta) {
+      const input = document.getElementById('input-total-jugadores');
+      let current = input ? parseInt(input.value, 10) || 10 : 10;
+      current += delta;
+      if (current < 2) current = 2;
+      if (current > 40) current = 40;
+      appState.totalPlayers = current;
+      if (input) input.value = current;
+      updatePlayerPresetButtons();
+      updateStatusBadge();
+    }
+
+    function onPlayerCountManualChange() {
+      const input = document.getElementById('input-total-jugadores');
+      let val = input ? parseInt(input.value, 10) : 10;
+      if (isNaN(val) || val < 2) val = 2;
+      if (val > 40) val = 40;
+      appState.totalPlayers = val;
+      if (input) input.value = val;
+      updatePlayerPresetButtons();
+      updateStatusBadge();
+    }
+
+    function updatePlayerPresetButtons() {
+      const current = appState.totalPlayers;
+      const desc = document.getElementById('player-preset-desc');
+      
+      const names = {
+        10: "Fútbol 5 (10 Jugadores)",
+        12: "Fútbol 6 (12 Jugadores)",
+        14: "Fútbol 7 (14 Jugadores)",
+        16: "Fútbol 8 (16 Jugadores)",
+        22: "Fútbol 11 (22 Jugadores)"
+      };
+
+      if (desc) {
+        desc.innerText = names[current] || `Formato Personalizado (${current} Jugadores)`;
+      }
+
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        const val = parseInt(btn.getAttribute('data-val'), 10);
+        if (val === current) {
+          btn.classList.add('bg-emerald-600', 'text-white');
+          btn.classList.remove('bg-neutral-800', 'text-neutral-300');
+        } else {
+          btn.classList.remove('bg-emerald-600', 'text-white');
+          btn.classList.add('bg-neutral-800', 'text-neutral-300');
+        }
+      });
+    }
+
+    // MANEJO DE JUGADORES
+    function handlePlayerSubmit(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('input-nuevo-jugador');
+      if (!input) return;
+
+      const name = input.value.trim();
+      if (!name) return;
+
+      if (appState.players.length >= appState.totalPlayers) {
+        showToast("¡Cupo completo! Los nuevos ingresarán como suplentes.", "info");
+      }
+
+      appState.players.push({
+        id: Date.now() + Math.random(),
+        name: name,
+        score: 7
+      });
+
+      input.value = "";
+      renderPlayersList();
+      updateStatusBadge();
+
+      if (appState.players.length === appState.totalPlayers) {
+        triggerConfetti();
+        showToast("¡LISTA COMPLETA! ¡ESTAMOS TODOS!", "check");
+      }
+    }
+
+    function removePlayer(id) {
+      appState.players = appState.players.filter(p => p.id !== id);
+      renderPlayersList();
+      updateStatusBadge();
+    }
+
+    function clearAllPlayers() {
+      if (appState.players.length === 0) return;
+      appState.players = [];
+      renderPlayersList();
+      updateStatusBadge();
+      showToast("Lista vaciada.", "info");
+    }
+
+    // ACTUALIZACIÓN DE ESTADO
+    function updateStatusBadge() {
+      const total = appState.totalPlayers;
+      const count = appState.players.length;
+      const faltan = total - count;
+
+      const totalEl = document.getElementById('num-total');
+      const anotadosEl = document.getElementById('num-anotados');
+      const cupoEl = document.getElementById('badge-cupo');
+      const progressEl = document.getElementById('progress-bar');
+
+      if (totalEl) totalEl.innerText = total;
+      if (anotadosEl) anotadosEl.innerText = count;
+      if (cupoEl) cupoEl.innerText = `${count} de ${total}`;
+
+      const pct = Math.min(100, Math.round((count / total) * 100));
+      if (progressEl) progressEl.style.width = `${pct}%`;
+
+      const card = document.getElementById('status-card');
+      const faltanHeader = document.getElementById('counter-faltan');
+      const statusText = document.getElementById('counter-status-text');
+
+      if (!card || !faltanHeader || !statusText) return;
+
+      if (faltan > 0) {
+        card.className = "bg-neutral-900 border border-amber-500/40 rounded-3xl p-4 shadow-xl relative overflow-hidden";
+        statusText.innerText = "Convocatoria Abierta";
+        statusText.parentElement.className = "text-xs uppercase font-bold tracking-wider text-amber-400 flex items-center gap-1.5";
+        faltanHeader.innerHTML = `FALTAN <span class="text-amber-400">${faltan}</span> JUGADOR${faltan === 1 ? '' : 'ES'}`;
+      } else if (faltan === 0) {
+        card.className = "bg-emerald-950/80 border border-emerald-500 rounded-3xl p-4 shadow-xl relative overflow-hidden";
+        statusText.innerText = "¡Equipo Completo!";
+        statusText.parentElement.className = "text-xs uppercase font-bold tracking-wider text-emerald-400 flex items-center gap-1.5";
+        faltanHeader.innerHTML = `<span class="text-emerald-400">¡ESTAMOS TODOS! 🎉</span>`;
+      } else {
+        const sobran = Math.abs(faltan);
+        card.className = "bg-neutral-900 border border-teal-500 rounded-3xl p-4 shadow-xl relative overflow-hidden";
+        statusText.innerText = "Cupo superado";
+        faltanHeader.innerHTML = `<span class="text-teal-400">+${sobran} SUPLENTES</span>`;
+      }
+    }
+
+    // RENDERIZAR JUGADORES EN LISTA
+    function renderPlayersList() {
+      const container = document.getElementById('players-list-container');
+      if (!container) return;
+      container.innerHTML = "";
+
+      if (appState.players.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 text-neutral-500 text-xs">
+            <i class="fa-solid fa-user-clock text-2xl mb-1 text-neutral-600 block"></i>
+            No hay jugadores anotados todavía.<br>Agregá el primero arriba.
+          </div>
+        `;
+        return;
+      }
+
+      appState.players.forEach((player, index) => {
+        const isExtra = index >= appState.totalPlayers;
+        const item = document.createElement('div');
+        item.className = `flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold ${
+          isExtra ? 'bg-teal-950/40 border border-teal-800/40 text-teal-200' : 'bg-neutral-950 border border-neutral-800 text-white'
+        }`;
+
+        item.innerHTML = `
+          <div class="flex items-center gap-2.5">
+            <span class="w-6 h-6 rounded-full ${isExtra ? 'bg-teal-900 text-teal-300' : 'bg-emerald-900/80 text-emerald-300'} flex items-center justify-center font-bold text-[11px]">
+              ${index + 1}
+            </span>
+            <span class="text-sm">${escapeHTML(player.name)}</span>
+            ${isExtra ? '<span class="text-[10px] bg-teal-800 text-white px-1.5 rounded">Suplente</span>' : ''}
+          </div>
+          <button onclick="removePlayer(${player.id})" class="text-neutral-500 hover:text-red-400 p-1 transition">
+            <i class="fa-solid fa-trash text-xs"></i>
+          </button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // FINALIZAR CONVOCATORIA
+    function celebrateAndFinish() {
+      triggerConfetti();
+      showToast("¡Gran partido armado! Podés ver el flyer o calificar.", "check");
+      showFlyerModal();
+    }
+
+    // COPIAR LISTA PARA WHATSAPP
+    function copyWhatsAppList() {
+      const faltan = appState.totalPlayers - appState.players.length;
+      let text = `⚽ *${(appState.titulo || 'PARTIDO').toUpperCase()}* ⚽\n`;
+      if (appState.lugar) text += `📍 *Lugar:* ${appState.lugar}\n`;
+      if (appState.fecha || appState.hora) text += `📅 *Fecha:* ${appState.fecha || 'Por definir'} - ⏰ ${appState.hora || '--:--'} hs\n`;
+      text += `👥 *Total requerido:* ${appState.totalPlayers} jugadores\n\n`;
+      
+      if (faltan > 0) {
+        text += `⚠️ *¡FALTAN ${faltan} PARA COMPLETAR!* ⚠️\n\n`;
+      } else {
+        text += `🔥 *¡ESTAMOS TODOS! SE JUEGA SI O SI* 🔥\n\n`;
+      }
+
+      text += `*LISTA DE JUGADORES:*\n`;
+      if (appState.players.length === 0) {
+        text += `(Aún no hay anotados)\n`;
+      } else {
+        appState.players.forEach((p, idx) => {
+          text += `${idx + 1}. ${p.name}\n`;
+        });
+      }
+
+      if (faltan > 0) {
+        for (let i = appState.players.length + 1; i <= appState.totalPlayers; i++) {
+          text += `${i}. _____________\n`;
+        }
+      }
+
+      text += `\n📲 *Armado con Hay Fulbo App*`;
+
+      const tempArea = document.createElement('textarea');
+      tempArea.value = text;
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      try {
+        document.execCommand('copy');
+        showToast("¡Lista copiada! Podés pegarla en WhatsApp.", "check");
+      } catch (err) {
+        showToast("No se pudo copiar automáticamente.", "error");
+      }
+      document.body.removeChild(tempArea);
+    }
+
+    // PEGAR DESDE WHATSAPP
+    function openPasteModal() {
+      const modal = document.getElementById('paste-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+    function closePasteModal() {
+      const modal = document.getElementById('paste-modal');
+      if (modal) modal.classList.add('hidden');
+      const text = document.getElementById('paste-textarea');
+      if (text) text.value = "";
+    }
+    function processPastedText() {
+      const textArea = document.getElementById('paste-textarea');
+      if (!textArea || !textArea.value.trim()) {
+        closePasteModal();
+        return;
+      }
+
+      const lines = textArea.value.split('\n');
+      let added = 0;
+
+      lines.forEach(line => {
+        let clean = line.replace(/^[0-9]+[\.\-\)\s]+/, '').trim();
+        clean = clean.replace(/^[•\-\*]\s*/, '').trim();
+        if (clean.length > 1 && !clean.toLowerCase().includes('partido') && !clean.toLowerCase().includes('cancha') && !clean.toLowerCase().includes('hora')) {
+          appState.players.push({
+            id: Date.now() + Math.random(),
+            name: clean,
+            score: 7
+          });
+          added++;
+        }
+      });
+
+      closePasteModal();
+      renderPlayersList();
+      updateStatusBadge();
+      showToast(`Se agregaron ${added} jugadores.`, "check");
+    }
+
+    // MODAL DE FLYER CONVOCATORIA
+    function showFlyerModal() {
+      const faltan = appState.totalPlayers - appState.players.length;
+      
+      const titleEl = document.getElementById('flyer-card-title');
+      const canchaEl = document.getElementById('flyer-card-cancha');
+      const datetimeEl = document.getElementById('flyer-card-datetime');
+      const footerEl = document.getElementById('flyer-footer-cupos');
+
+      if (titleEl) titleEl.innerText = appState.titulo || "PARTIDO CONFIRMADO";
+      if (canchaEl) canchaEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> ${appState.lugar || 'Lugar por definir'}`;
+      if (datetimeEl) datetimeEl.innerText = `${appState.fecha || 'Fecha tbd'} • ${appState.hora || '--:--'} hs`;
+      if (footerEl) footerEl.innerText = `${appState.players.length}/${appState.totalPlayers} CONFIRMADOS`;
+
+      const badge = document.getElementById('flyer-badge-status');
+      if (badge) {
+        if (faltan > 0) {
+          badge.className = "inline-block bg-amber-500 text-black font-black text-xs uppercase px-3 py-1 rounded-full shadow-lg";
+          badge.innerText = `¡FALTAN ${faltan} JUGADORES!`;
+        } else {
+          badge.className = "inline-block bg-emerald-400 text-black font-black text-xs uppercase px-3 py-1 rounded-full shadow-lg";
+          badge.innerText = `¡ESTAMOS TODOS! CONFIRMADO`;
+        }
+      }
+
+      const grid = document.getElementById('flyer-card-players');
+      if (grid) {
+        grid.innerHTML = "";
+        const totalSlots = Math.max(appState.totalPlayers, appState.players.length);
+        for (let i = 0; i < totalSlots; i++) {
+          const p = appState.players[i];
+          const row = document.createElement('div');
+          row.className = "flex items-center gap-1.5 truncate";
+          if (p) {
+            row.innerHTML = `
+              <span class="w-4 h-4 rounded-full bg-emerald-500 text-black font-black text-[9px] flex items-center justify-center flex-shrink-0">${i+1}</span>
+              <span class="text-white font-semibold truncate">${escapeHTML(p.name)}</span>
+            `;
+          } else {
+            row.innerHTML = `
+              <span class="w-4 h-4 rounded-full bg-neutral-700 text-neutral-400 font-bold text-[9px] flex items-center justify-center flex-shrink-0">${i+1}</span>
+              <span class="text-neutral-400 italic">Por confirmar...</span>
+            `;
+          }
+          grid.appendChild(row);
+        }
+      }
+
+      const modal = document.getElementById('flyer-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeFlyerModal() {
+      const modal = document.getElementById('flyer-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    // PASO 3: RATINGS POST-PARTIDO
+    function prepareRatingsStep() {
+      const container = document.getElementById('ratings-container');
+      if (!container) return;
+      container.innerHTML = "";
+
+      if (appState.players.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-neutral-500 text-xs">
+            No hay jugadores en la lista para calificar.<br>Anotalos primero en el Paso 2.
+          </div>
+        `;
+        return;
+      }
+
+      appState.players.forEach(p => {
+        const item = document.createElement('div');
+        item.className = "bg-neutral-900 border border-neutral-800 rounded-2xl p-3 flex items-center justify-between gap-2 shadow";
+
+        item.innerHTML = `
+          <div class="flex-1">
+            <span class="text-sm font-bold text-white block truncate">${escapeHTML(p.name)}</span>
+            <div class="flex items-center gap-1 mt-1">
+              <span class="text-[11px] font-bold text-emerald-400" id="score-label-${p.id}">Nota: ${p.score}/10</span>
+              <span class="text-[10px] text-neutral-400">(${getRankLabel(p.score)})</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input type="range" min="1" max="10" value="${p.score}" 
+              oninput="updatePlayerScore(${p.id}, this.value)"
+              class="w-24 accent-emerald-500 cursor-pointer">
+
+            <button type="button" onclick="setMvpManual(${p.id})" id="mvp-btn-${p.id}"
+              class="w-9 h-9 rounded-xl flex items-center justify-center text-sm transition ${
+                appState.selectedMvpId === p.id 
+                  ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/30' 
+                  : 'bg-neutral-800 text-neutral-400 hover:text-amber-400'
+              }" title="Elegir como Figura">
+              <i class="fa-solid fa-crown"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function updatePlayerScore(id, newScore) {
+      const score = parseInt(newScore, 10);
+      const player = appState.players.find(p => p.id === id);
+      if (player) {
+        player.score = score;
+        const label = document.getElementById(`score-label-${id}`);
+        if (label) {
+          label.innerHTML = `Nota: ${score}/10 <span class="text-[10px] text-neutral-400">(${getRankLabel(score)})</span>`;
+        }
+      }
+    }
+
+    function setMvpManual(id) {
+      appState.selectedMvpId = id;
+      prepareRatingsStep();
+      const p = appState.players.find(x => x.id === id);
+      showToast(`¡${p ? p.name : 'Jugador'} elegido como Figura!`, "check");
+    }
+
+    function getRankLabel(score) {
+      if (score >= 9) return "Crack Total";
+      if (score >= 7) return "Jugó Bien";
+      if (score >= 5) return "Cumplió";
+      return "Puso Ganas";
+    }
+
+    // PODIO & FIGURA
+    function showPodiumModal() {
+      if (appState.players.length === 0) {
+        showToast("No hay jugadores cargados para mostrar podio.", "info");
+        return;
+      }
+
+      const sorted = [...appState.players].sort((a, b) => b.score - a.score);
+      let mvp = appState.players.find(p => p.id === appState.selectedMvpId);
+      if (!mvp) mvp = sorted[0];
+
+      const mvpName = document.getElementById('mvp-name-card');
+      const mvpBadge = document.getElementById('mvp-score-badge');
+      const footerCancha = document.getElementById('podium-footer-cancha');
+
+      if (mvpName) mvpName.innerText = mvp.name;
+      if (mvpBadge) mvpBadge.innerText = `Puntaje: ${mvp.score}/10 • ${getRankLabel(mvp.score)}`;
+      if (footerCancha) footerCancha.innerText = appState.lugar || "Cancha";
+
+      const rankingList = document.getElementById('podium-ranking-list');
+      if (rankingList) {
+        rankingList.innerHTML = "";
+
+        sorted.forEach((player, i) => {
+          const isFirst = player.id === mvp.id;
+          const row = document.createElement('div');
+          row.className = `flex items-center justify-between py-1 px-2 rounded-lg text-xs ${
+            isFirst ? 'bg-amber-500/20 border border-amber-500/50 text-amber-300 font-bold' : 'text-neutral-300'
+          }`;
+
+          let icon = `<span class="w-4 text-center font-bold text-neutral-500">${i+1}</span>`;
+          if (i === 0) icon = `🥇`;
+          else if (i === 1) icon = `🥈`;
+          else if (i === 2) icon = `🥉`;
+
+          row.innerHTML = `
+            <div class="flex items-center gap-2 truncate">
+              ${icon}
+              <span class="truncate">${escapeHTML(player.name)}</span>
+              ${isFirst ? '<span class="text-[9px] bg-amber-500 text-black px-1.5 py-0.2 rounded font-black">MVP</span>' : ''}
+            </div>
+            <span class="font-bold ${isFirst ? 'text-amber-400' : 'text-neutral-400'}">${player.score} pts</span>
+          `;
+          rankingList.appendChild(row);
+        });
+      }
+
+      triggerConfetti();
+      const modal = document.getElementById('podium-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closePodiumModal() {
+      const modal = document.getElementById('podium-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    // MOTOR GRÁFICO EN CANVAS PARA DESCARGA DE FLYERS HD
+    function downloadConvocatoriaFlyer() {
+      try {
+        showToast("Generando flyer HD...", "info");
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080;
+        canvas.height = 1350;
+        const ctx = canvas.getContext('2d');
+
+        // Fondo césped
+        const grad = ctx.createLinearGradient(0, 0, 0, 1350);
+        grad.addColorStop(0, '#0c381c');
+        grad.addColorStop(0.5, '#072412');
+        grad.addColorStop(1, '#031209');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 1080, 1350);
+
+        // Franjas de pasto
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+        for (let y = 0; y < 1350; y += 80) {
+          ctx.fillRect(0, y, 1080, 40);
+        }
+
+        // Líneas de cancha
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 6;
+        ctx.strokeRect(50, 50, 980, 1250);
+        
+        ctx.beginPath();
+        ctx.arc(540, 675, 160, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(50, 675);
+        ctx.lineTo(1030, 675);
+        ctx.stroke();
+
+        // Encabezado
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#22c55e';
+        ctx.font = 'bold 36px Arial';
+        ctx.fillText('HAY FULBO • CONVOCATORIA OFICIAL', 540, 120);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 68px Arial';
+        ctx.fillText((appState.titulo || 'PARTIDO').toUpperCase(), 540, 200);
+
+        ctx.fillStyle = '#86efac';
+        ctx.font = 'bold 34px Arial';
+        const infoLugar = appState.lugar ? `📍 ${appState.lugar}` : '📍 Cancha';
+        const infoHora = appState.fecha ? ` • ⏰ ${appState.fecha} (${appState.hora || ''} hs)` : '';
+        ctx.fillText(`${infoLugar}${infoHora}`, 540, 260);
+
+        // Estado del Cupo
+        const faltan = appState.totalPlayers - appState.players.length;
+        if (faltan <= 0) {
+          ctx.fillStyle = '#22c55e';
+          roundRect(ctx, 240, 310, 600, 70, 35, true);
+          ctx.fillStyle = '#000000';
+          ctx.font = '900 36px Arial';
+          ctx.fillText('¡ESTAMOS TODOS! SE JUEGA', 540, 358);
+        } else {
+          ctx.fillStyle = '#f59e0b';
+          roundRect(ctx, 240, 310, 600, 70, 35, true);
+          ctx.fillStyle = '#000000';
+          ctx.font = '900 36px Arial';
+          ctx.fillText(`¡FALTAN ${faltan} JUGADORES!`, 540, 358);
+        }
+
+        // Recuadro de lista
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+        roundRect(ctx, 90, 420, 900, 780, 30, true);
+        ctx.strokeStyle = 'rgba(34, 197, 94, 0.4)';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        const totalSlots = Math.max(appState.totalPlayers, appState.players.length);
+        const half = Math.ceil(totalSlots / 2);
+
+        for (let i = 0; i < totalSlots; i++) {
+          const col = i < half ? 0 : 1;
+          const row = col === 0 ? i : (i - half);
+          const x = col === 0 ? 130 : 580;
+          const y = 490 + (row * 66);
+
+          const player = appState.players[i];
+
+          ctx.fillStyle = player ? '#22c55e' : '#404040';
+          ctx.beginPath();
+          ctx.arc(x + 25, y - 10, 22, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = player ? '#000000' : '#ffffff';
+          ctx.font = 'bold 22px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${i + 1}`, x + 25, y - 2);
+
+          ctx.textAlign = 'left';
+          ctx.font = 'bold 30px Arial';
+          if (player) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(player.name.substring(0, 16), x + 65, y);
+          } else {
+            ctx.fillStyle = '#737373';
+            ctx.fillText('Por confirmar...', x + 65, y);
+          }
+        }
+
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#86efac';
+        ctx.font = 'bold 28px Arial';
+        ctx.fillText(`CUPOS: ${appState.players.length} DE ${appState.totalPlayers} CONFIRMADOS • HAY FULBO APP`, 540, 1250);
+
+        triggerDownload(canvas, `HayFulbo_Convocatoria.png`);
+      } catch (err) {
+        console.error("Error al generar flyer:", err);
+        showToast("Error al exportar imagen.", "error");
+      }
+    }
+
+    function downloadPodiumFlyer() {
+      try {
+        if (appState.players.length === 0) {
+          showToast("No hay jugadores cargados.", "info");
+          return;
+        }
+
+        showToast("Generando flyer de la Figura...", "info");
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080;
+        canvas.height = 1350;
+        const ctx = canvas.getContext('2d');
+
+        const grad = ctx.createLinearGradient(0, 0, 0, 1350);
+        grad.addColorStop(0, '#1c1505');
+        grad.addColorStop(0.4, '#0f0c03');
+        grad.addColorStop(1, '#050505');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 1080, 1350);
+
+        ctx.strokeStyle = 'rgba(251, 191, 36, 0.4)';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(40, 40, 1000, 1270);
+
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = 'bold 36px Arial';
+        ctx.fillText('🏆 PREMIACIÓN POST-PARTIDO 🏆', 540, 110);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 30px Arial';
+        ctx.fillText((appState.titulo || 'PARTIDO').toUpperCase(), 540, 160);
+
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = 'bold 70px Arial';
+        ctx.fillText('🥇', 540, 260);
+
+        ctx.font = 'bold 34px Arial';
+        ctx.fillStyle = '#fef08a';
+        ctx.fillText('LA FIGURA DEL PARTIDO', 540, 320);
+
+        const sorted = [...appState.players].sort((a, b) => b.score - a.score);
+        let mvp = appState.players.find(p => p.id === appState.selectedMvpId) || sorted[0] || { name: 'Crack', score: 10 };
+
+        ctx.font = '900 85px Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(mvp.name.toUpperCase(), 540, 410);
+
+        ctx.fillStyle = '#fbbf24';
+        roundRect(ctx, 320, 445, 440, 55, 27, true);
+        ctx.fillStyle = '#000000';
+        ctx.font = '900 28px Arial';
+        ctx.fillText(`PUNTAJE: ${mvp.score} / 10  •  ${getRankLabel(mvp.score).toUpperCase()}`, 540, 483);
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        roundRect(ctx, 90, 540, 900, 680, 24, true);
+
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#a3a3a3';
+        ctx.font = 'bold 24px Arial';
+        ctx.fillText('RANKING GENERAL DE RENDIMIENTO', 130, 590);
+        ctx.textAlign = 'right';
+        ctx.fillText('NOTA', 940, 590);
+
+        sorted.slice(0, 8).forEach((p, idx) => {
+          const y = 650 + (idx * 68);
+          ctx.textAlign = 'left';
+          ctx.fillStyle = idx === 0 ? '#fbbf24' : '#ffffff';
+          ctx.font = 'bold 28px Arial';
+
+          let prefix = `${idx + 1}.`;
+          if (idx === 0) prefix = '🥇';
+          else if (idx === 1) prefix = '🥈';
+          else if (idx === 2) prefix = '🥉';
+
+          ctx.fillText(`${prefix}  ${p.name}`, 130, y);
+
+          ctx.textAlign = 'right';
+          ctx.fillText(`${p.score} pts`, 940, y);
+        });
+
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#737373';
+        ctx.font = 'bold 24px Arial';
+        ctx.fillText(`📍 ${appState.lugar || 'Cancha'}  •  HAY FULBO APP`, 540, 1265);
+
+        triggerDownload(canvas, `HayFulbo_Figura_${mvp.name}.png`);
+      } catch (err) {
+        console.error("Error al descargar podio:", err);
+        showToast("Error al exportar podio.", "error");
+      }
+    }
+
+    function triggerDownload(canvas, filename) {
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("¡Flyer descargado con éxito!", "check");
+    }
+
+    function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      if (stroke) ctx.stroke();
+    }
+
+    // TOASTS Y CONFETTI
+    function showToast(msg, type = "check") {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toast-icon');
+      const text = document.getElementById('toast-msg');
+
+      if (!toast || !icon || !text) return;
+
+      text.innerText = msg;
+      if (type === "check") {
+        icon.className = "fa-solid fa-circle-check text-emerald-400 text-xl";
+        toast.style.borderColor = "#22c55e";
+      } else if (type === "info") {
+        icon.className = "fa-solid fa-circle-info text-amber-400 text-xl";
+        toast.style.borderColor = "#f59e0b";
+      } else {
+        icon.className = "fa-solid fa-triangle-exclamation text-red-400 text-xl";
+        toast.style.borderColor = "#ef4444";
+      }
+
+      toast.classList.remove('-translate-y-16', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('-translate-y-16', 'opacity-0');
+      }, 2600);
+    }
+
+    function triggerConfetti() {
+      const canvas = document.getElementById('confetti-canvas');
+      if (!canvas) return;
+      canvas.classList.remove('hidden');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const pieces = [];
+      const colors = ['#22c55e', '#fbbf24', '#ffffff', '#38bdf8', '#f43f5e'];
+
+      for (let i = 0; i < 90; i++) {
+        pieces.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          velX: (Math.random() - 0.5) * 4,
+          velY: Math.random() * 5 + 3,
+          rot: Math.random() * 360
+        });
+      }
+
+      let frames = 0;
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        pieces.forEach(p => {
+          p.x += p.velX;
+          p.y += p.velY;
+          p.rot += 3;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rot * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+          ctx.restore();
+        });
+
+        frames++;
+        if (frames < 100) {
+          requestAnimationFrame(animate);
+        } else {
+          canvas.classList.add('hidden');
+        }
+      }
+      animate();
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
