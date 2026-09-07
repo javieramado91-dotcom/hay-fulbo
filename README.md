@@ -13,7 +13,7 @@ Sin backend, sin cuentas, sin build: es HTML, CSS y JavaScript plano.
 | Paso | Para qué sirve |
 |---|---|
 | **1 · Partido** | Título, cancha, fecha, horario, formato (F5 a F11 o libre) y lo que sale el turno por persona. |
-| **2 · Lista** | Alta de jugadores con su puesto, suplentes automáticos al pasarse del cupo, control de quién pagó, importación de listas pegadas de WhatsApp y texto listo para volver a pegar en el grupo. |
+| **2 · Lista** | Alta de jugadores con su puesto, botón **Los de siempre** para traer el plantel habitual de un toque, suplentes automáticos al pasarse del cupo, control de quién pagó, importación de listas pegadas de WhatsApp y texto listo para volver a pegar en el grupo. |
 | **3 · Equipos** | Balanceador que reparte a los titulares en dos equipos parejos y los dibuja en formación sobre la cancha. |
 | **4 · Figura** | Puntaje de 1 a 10 por jugador, goles y elección de la figura del partido. |
 | **5 · Historial** | Ranking histórico por promedio, partidos jugados, goles y MVPs de todos los picados guardados. |
@@ -32,7 +32,10 @@ Hay **cinco paletas** para elegir: Noche, Fuego, Hielo, Oro y Neón.
 
 ## Detalles que hacen la diferencia
 
-- **Todo se guarda solo.** El partido en curso, las preferencias y el historial viven en `localStorage`.
+- **Todo se guarda solo.** El partido en curso, las preferencias y el historial viven en `localStorage`:
+  cerrás la app y volvés justo donde estabas. Al arrancar un partido nuevo se conservan el título,
+  la cancha, el horario, el formato y el precio, y el plantel entra con un toque en **Los de siempre**.
+  El input de nombres además autocompleta con todos los que ya jugaron.
 - **Link para compartir la convocatoria.** El estado del partido se comprime en el hash de la URL,
   así que cualquiera del grupo abre el mismo link y ve la misma lista, sin servidor de por medio.
 - **El nivel se aprende del historial.** No se carga a mano: cuando anotás a alguien que ya jugó,
@@ -57,6 +60,11 @@ Es una **PWA**: se puede instalar como una app más y funciona sin conexión.
 Una vez instalada abre a pantalla completa, sin barra del navegador, y el service worker
 cachea toda la app: entrás a la cancha sin señal y podés armar la lista y generar los flyers igual.
 Cuando se publica una versión nueva aparece un aviso para actualizar.
+
+El shell se sirve entero desde un caché versionado —HTML, CSS y JavaScript siempre de la misma
+generación—. Servir el HTML de la red mientras los scripts salen del caché mezcla versiones: alcanza
+con que un deploy renombre un id para que el JavaScript viejo no encuentre su elemento y deje media
+app sin enganchar.
 
 ---
 

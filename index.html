@@ -173,7 +173,8 @@
 
       <div class="card">
         <form id="form-player" class="add-row" autocomplete="off">
-          <input id="f-nombre" type="text" maxlength="22" placeholder="Nombre o apodo…" aria-label="Nombre del jugador">
+          <input id="f-nombre" type="text" maxlength="22" placeholder="Nombre o apodo…" aria-label="Nombre del jugador" list="known-names">
+          <datalist id="known-names"></datalist>
           <select id="f-pos" aria-label="Posición">
             <option value="COM">Campo</option>
             <option value="ARQ">Arquero</option>
@@ -184,7 +185,8 @@
           <button class="btn btn--primary btn--icon" type="submit" aria-label="Agregar"><svg><use href="#i-plus"></use></svg></button>
         </form>
         <div class="add-tools">
-          <button class="link" id="btn-paste"><svg><use href="#i-wa"></use></svg> Pegar lista de WhatsApp</button>
+          <button class="link" id="btn-regulars"><svg><use href="#i-users"></use></svg> Los de siempre</button>
+          <button class="link" id="btn-paste"><svg><use href="#i-wa"></use></svg> Pegar de WhatsApp</button>
           <button class="link link--danger" id="btn-clear"><svg><use href="#i-trash"></use></svg> Vaciar</button>
         </div>
       </div>
@@ -360,13 +362,13 @@
 </div>
 
 <script src="js/util.js"></script>
+<script src="js/pwa.js"></script>
 <script src="js/state.js"></script>
 <script src="js/teams.js"></script>
 <script src="js/canvas-kit.js"></script>
 <script src="js/themes.js"></script>
 <script src="js/flyers.js"></script>
 <script src="js/ui.js"></script>
-<script src="js/pwa.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

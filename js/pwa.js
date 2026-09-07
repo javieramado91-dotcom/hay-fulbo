@@ -95,7 +95,12 @@
 
   /* ---------------- arranque ---------------- */
 
+  let started = false;
+
   function init() {
+    if (started) return;
+    started = true;
+
     const installBtn = U.$('#btn-install');
     const dismissBtn = U.$('#btn-install-dismiss');
     const updateBtn = U.$('#btn-update');
@@ -140,4 +145,15 @@
   }
 
   HF.pwa = { init, isStandalone, isIOS, promptInstall };
+
+  /*
+   * Arranca por su cuenta, sin esperar al resto de la app: si un módulo falla,
+   * el aviso de "hay una versión nueva" tiene que seguir apareciendo. Es la
+   * única salida para una instalación que quedó con una versión rota.
+   */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
 })(window);

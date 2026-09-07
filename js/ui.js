@@ -16,6 +16,20 @@
   let currentStep = 1;
   let currentFlyer = 'call';
 
+  /**
+   * Engancha un listener sin explotar si el elemento no está.
+   * Un id que cambió no tiene que dejar sin handlers al resto de la pantalla.
+   */
+  function bind(selector, type, handler) {
+    const node = $(selector);
+    if (!node) {
+      console.warn('[hayfulbo] no encontré', selector, '— sigo con el resto');
+      return null;
+    }
+    node.addEventListener(type, handler);
+    return node;
+  }
+
   /* ============================================================
      Navegación
      ============================================================ */
@@ -54,27 +68,29 @@
      ============================================================ */
   function syncSetupForm() {
     const m = store.match;
-    $('#f-titulo').value = m.titulo;
-    $('#f-lugar').value = m.lugar;
-    $('#f-fecha').value = m.fecha;
-    $('#f-hora').value = m.hora;
-    $('#f-total').value = m.totalPlayers;
-    $('#f-precio').value = m.precio || '';
-    $('#f-teamA').value = m.teamNames.a;
-    $('#f-teamB').value = m.teamNames.b;
+    const put = (sel, value) => { const node = $(sel); if (node) node.value = value; };
+    put('#f-titulo', m.titulo);
+    put('#f-lugar', m.lugar);
+    put('#f-fecha', m.fecha);
+    put('#f-hora', m.hora);
+    put('#f-total', m.totalPlayers);
+    put('#f-precio', m.precio || '');
+    put('#f-teamA', m.teamNames.a);
+    put('#f-teamB', m.teamNames.b);
     renderFormatUI();
   }
 
   function renderFormatUI() {
     const total = store.match.totalPlayers;
-    $('#format-label').textContent = store.formatLabel;
+    const label = $('#format-label');
+    if (label) label.textContent = store.formatLabel;
     $$('#presets button').forEach((b) => b.classList.toggle('is-on', U.toInt(b.dataset.total, 0) === total));
   }
 
   function bindSetup() {
-    const bindText = (sel, key, transform) => {
-      $(sel).addEventListener('input', (ev) => {
-        const value = transform ? transform(ev.target.value) : ev.target.value;
+    const bindText = (sel, key) => {
+      bind(sel, 'input', (ev) => {
+        const value = ev.target.value;
         store.commit((m) => { m[key] = value; });
       });
     };
@@ -84,7 +100,7 @@
     bindText('#f-fecha', 'fecha');
     bindText('#f-hora', 'hora');
 
-    $('#f-precio').addEventListener('input', (ev) => {
+    bind('#f-precio', 'input', (ev) => {
       store.commit((m) => { m.precio = Math.max(0, U.toInt(ev.target.value, 0)); });
       renderStatus();
     });
@@ -98,21 +114,22 @@
       renderRoster();
     };
 
-    on($('#presets'), 'click', 'button', (_, btn) => setTotal(btn.dataset.total));
-    $('#total-minus').addEventListener('click', () => setTotal(store.match.totalPlayers - 1));
-    $('#total-plus').addEventListener('click', () => setTotal(store.match.totalPlayers + 1));
-    $('#f-total').addEventListener('change', (ev) => setTotal(ev.target.value));
+    const presets = $('#presets');
+    if (presets) on(presets, 'click', 'button', (_, btn) => setTotal(btn.dataset.total));
+    bind('#total-minus', 'click', () => setTotal(store.match.totalPlayers - 1));
+    bind('#total-plus', 'click', () => setTotal(store.match.totalPlayers + 1));
+    bind('#f-total', 'change', (ev) => setTotal(ev.target.value));
 
-    $('#btn-open-call').addEventListener('click', () => {
+    bind('#btn-open-call', 'click', () => {
       setStep(2);
       U.toast('Convocatoria abierta. A sumar gente.', 'check');
     });
 
-    $('#f-teamA').addEventListener('input', (ev) => {
+    bind('#f-teamA', 'input', (ev) => {
       store.commit((m) => { m.teamNames.a = ev.target.value.slice(0, 16) || 'Claritos'; });
       renderTeams();
     });
-    $('#f-teamB').addEventListener('input', (ev) => {
+    bind('#f-teamB', 'input', (ev) => {
       store.commit((m) => { m.teamNames.b = ev.target.value.slice(0, 16) || 'Oscuritos'; });
       renderTeams();
     });
@@ -174,6 +191,46 @@
     return select;
   }
 
+  /** Sugerencias del input de nombre, sacadas de los partidos anteriores. */
+  function renderKnownNames() {
+    const list = $('#known-names');
+    if (!list) return;
+    list.textContent = '';
+    const anotados = new Set(store.match.players.map((p) => U.normalize(p.name)));
+    store.knownPlayers()
+      .filter((p) => !anotados.has(p.key))
+      .slice(0, 60)
+      .forEach((p) => list.appendChild(el('option', { value: p.name })));
+  }
+
+  /** Suma de un saque a los habituales que falten, hasta llenar el cupo. */
+  function addRegulars() {
+    const known = store.knownPlayers();
+    const anotados = new Set(store.match.players.map((p) => U.normalize(p.name)));
+    const pendientes = known.filter((p) => !anotados.has(p.key));
+
+    if (!pendientes.length) {
+      U.toast(known.length ? 'Ya están todos los habituales.' : 'Todavía no hay partidos guardados.', 'info');
+      return;
+    }
+
+    const lugares = store.match.totalPlayers - store.match.players.length;
+    if (lugares <= 0) {
+      U.toast('No queda cupo libre.', 'info');
+      return;
+    }
+
+    let added = 0;
+    for (const p of pendientes) {
+      if (added >= lugares) break;
+      if (store.addPlayer(p.name, p.pos).ok) added++;
+    }
+
+    refreshAll();
+    U.toast(`Se sumaron ${added} de los de siempre.`, 'check');
+    if (store.missing === 0) U.confetti();
+  }
+
   function renderRoster() {
     const box = $('#roster');
     box.textContent = '';
@@ -210,7 +267,7 @@
   }
 
   function bindRoster() {
-    $('#form-player').addEventListener('submit', (ev) => {
+    bind('#form-player', 'submit', (ev) => {
       ev.preventDefault();
       const input = $('#f-nombre');
       const result = store.addPlayer(input.value, $('#f-pos').value);
@@ -233,7 +290,9 @@
       }
     });
 
-    on($('#roster'), 'click', '[data-act]', (_, btn) => {
+    const roster = $('#roster');
+    if (!roster) return;
+    on(roster, 'click', '[data-act]', (_, btn) => {
       const id = btn.closest('.pl').dataset.id;
       if (btn.dataset.act === 'del') {
         store.removePlayer(id);
@@ -245,13 +304,13 @@
       }
     });
 
-    on($('#roster'), 'change', '.pl__sel', (_, select) => {
+    on(roster, 'change', '.pl__sel', (_, select) => {
       const id = select.closest('.pl').dataset.id;
       store.updatePlayer(id, { pos: select.value });
       renderTeams();
     });
 
-    $('#btn-clear').addEventListener('click', () => {
+    bind('#btn-clear', 'click', () => {
       if (!store.match.players.length) return;
       U.confirmDialog('Vaciar la lista', 'Se van a borrar todos los jugadores anotados de este partido.', () => {
         store.clearPlayers();
@@ -260,14 +319,15 @@
       });
     });
 
-    $('#btn-paste').addEventListener('click', () => U.openModal('paste-modal'));
-    $('#btn-paste-ok').addEventListener('click', processPaste);
-    $('#btn-copy-wa').addEventListener('click', () => copyToClipboard(buildCallText(), 'Texto copiado. Pegalo en el grupo.'));
-    $('#btn-copy-link').addEventListener('click', () =>
+    bind('#btn-regulars', 'click', addRegulars);
+    bind('#btn-paste', 'click', () => U.openModal('paste-modal'));
+    bind('#btn-paste-ok', 'click', processPaste);
+    bind('#btn-copy-wa', 'click', () => copyToClipboard(buildCallText(), 'Texto copiado. Pegalo en el grupo.'));
+    bind('#btn-copy-link', 'click', () =>
       copyToClipboard(model.buildShareLink(store.match), 'Link copiado. El que lo abra ve la misma lista.')
     );
-    $('#btn-goto-teams').addEventListener('click', () => setStep(3));
-    $('#btn-flyer-call').addEventListener('click', () => openFlyer('call'));
+    bind('#btn-goto-teams', 'click', () => setStep(3));
+    bind('#btn-flyer-call', 'click', () => openFlyer('call'));
   }
 
   /** Extrae nombres de un mensaje de WhatsApp pegado. */
@@ -357,7 +417,7 @@
   }
 
   function bindTeams() {
-    $('#btn-balance').addEventListener('click', () => {
+    bind('#btn-balance', 'click', () => {
       const starters = store.starters;
       if (starters.length < 2) {
         U.toast('Necesitás al menos 2 titulares.', 'info');
@@ -375,7 +435,7 @@
       renderTeams();
     });
 
-    $('#btn-flyer-teams').addEventListener('click', () => {
+    bind('#btn-flyer-teams', 'click', () => {
       if (!store.match.teams) {
         U.toast('Primero balanceá los equipos.', 'info');
         return;
@@ -383,7 +443,7 @@
       openFlyer('teams');
     });
 
-    $('#btn-copy-teams').addEventListener('click', () => {
+    bind('#btn-copy-teams', 'click', () => {
       if (!store.match.teams) {
         U.toast('Primero balanceá los equipos.', 'info');
         return;
@@ -458,14 +518,14 @@
       renderRatings();
     });
 
-    $('#btn-flyer-mvp').addEventListener('click', () => {
+    bind('#btn-flyer-mvp', 'click', () => {
       if (!store.mvp) {
         U.toast('Cargá jugadores para elegir la figura.', 'info');
         return;
       }
       openFlyer('mvp');
     });
-    $('#btn-save-history').addEventListener('click', saveMatchToHistory);
+    bind('#btn-save-history', 'click', saveMatchToHistory);
   }
 
   function saveMatchToHistory() {
@@ -545,7 +605,7 @@
   }
 
   function bindHistory() {
-    $('#btn-clear-history').addEventListener('click', () => {
+    bind('#btn-clear-history', 'click', () => {
       if (!store.history.length) return;
       U.confirmDialog('Borrar historial', 'Se pierden todos los partidos guardados y el ranking histórico.', () => {
         store.clearHistory();
@@ -554,7 +614,7 @@
       });
     });
 
-    $('#btn-reset').addEventListener('click', () => {
+    bind('#btn-reset', 'click', () => {
       U.confirmDialog('Nuevo partido', 'Arranca una convocatoria en blanco. Se mantienen la cancha, el formato y el historial.', () => {
         store.reset(true);
         syncSetupForm();
@@ -667,7 +727,7 @@
       await drawFlyer();
     });
 
-    $('#btn-download').addEventListener('click', async () => {
+    bind('#btn-download', 'click', async () => {
       const blob = await canvasToBlob($('#flyer-canvas'));
       if (!blob) {
         U.toast('No se pudo exportar la imagen.', 'error');
@@ -682,7 +742,7 @@
       U.toast('Flyer descargado en 1080×1920.', 'check');
     });
 
-    $('#btn-share').addEventListener('click', async () => {
+    bind('#btn-share', 'click', async () => {
       const canvas = $('#flyer-canvas');
       const blob = await canvasToBlob(canvas);
       const filename = HF.flyers.filename(currentFlyer, store.match);
@@ -712,6 +772,7 @@
   function refreshAll() {
     renderStatus();
     renderRoster();
+    renderKnownNames();
     renderFormatUI();
     if (currentStep === 3) renderTeams();
     if (currentStep === 4) renderRatings();
@@ -726,22 +787,34 @@
     if (opts && opts.fromLink) U.toast('Convocatoria cargada desde el link.', 'check');
   }
 
+  /** Corre un paso del arranque aislado: si falla, el resto sigue vivo. */
+  function step(name, fn) {
+    try {
+      fn();
+    } catch (err) {
+      console.error('[hayfulbo] error en "' + name + '"', err);
+    }
+  }
+
   function init(opts) {
-    U.initModals();
-    U.initConfirm();
+    step('modales', () => { U.initModals(); U.initConfirm(); });
+    step('partido', bindSetup);
+    step('lista', bindRoster);
+    step('equipos', bindTeams);
+    step('figura', bindResult);
+    step('historial', bindHistory);
+    step('flyers', bindFlyerModal);
 
-    bindSetup();
-    bindRoster();
-    bindTeams();
-    bindResult();
-    bindHistory();
-    bindFlyerModal();
+    step('navegación', () => {
+      const steps = $('#steps');
+      if (steps) on(steps, 'click', '.step', (_, btn) => setStep(U.toInt(btn.dataset.step, 1)));
+    });
 
-    on($('#steps'), 'click', '.step', (_, btn) => setStep(U.toInt(btn.dataset.step, 1)));
-
-    syncSetupForm();
-    refreshAll();
-    renderHistory();
+    step('render inicial', () => {
+      syncSetupForm();
+      refreshAll();
+      renderHistory();
+    });
 
     const startStep = opts && opts.fromLink ? 2 : U.clamp(U.toInt(store.prefs.step, 1), 1, 5);
     setStep(store.match.players.length ? startStep : 1, true);

@@ -8,7 +8,7 @@
   const HF = global.HF;
 
   function boot() {
-    const required = ['util', 'store', 'teams', 'kit', 'themes', 'flyers', 'ui', 'pwa'];
+    const required = ['util', 'store', 'teams', 'kit', 'themes', 'flyers', 'ui'];
     const missing = required.filter((key) => !HF || !HF[key]);
     if (missing.length) {
       console.error('[hayfulbo] faltan módulos:', missing.join(', '));
@@ -23,8 +23,7 @@
       HF.store.reset(false);
     }
 
-    HF.ui.init(session);
-    if (HF.pwa) HF.pwa.init();
+    run('ui', () => HF.ui.init(session));
 
     /* Si llega un link de convocatoria con la app ya abierta, lo aplicamos igual. */
     window.addEventListener('hashchange', () => {
@@ -35,6 +34,17 @@
         console.error('[hayfulbo] link de convocatoria inválido', err);
       }
     });
+  }
+
+  /** Ejecuta un paso del arranque sin que una falla corte los demás. */
+  function run(name, fn) {
+    try {
+      fn();
+      return true;
+    } catch (err) {
+      console.error('[hayfulbo] falló el arranque de "' + name + '"', err);
+      return false;
+    }
   }
 
   if (document.readyState === 'loading') {

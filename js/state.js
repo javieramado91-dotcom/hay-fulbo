@@ -223,6 +223,32 @@
       U.storage.set(KEY_HISTORY, this.history);
     },
 
+    /**
+     * Los jugadores que ya pasaron por el grupo, del más habitual al menos.
+     * El último partido pesa doble para que el plantel de esta semana venga primero.
+     */
+    knownPlayers() {
+      const map = new Map();
+      const add = (name, pos, weight) => {
+        const key = U.normalize(name);
+        if (!key) return;
+        if (!map.has(key)) map.set(key, { key, name, pos: pos || 'COM', count: 0 });
+        const row = map.get(key);
+        row.count += weight;
+        row.name = name;
+        if (pos && pos !== 'COM') row.pos = pos;
+      };
+
+      this.history.forEach((match, i) => {
+        (match.players || []).forEach((p) => add(p.name, p.pos, i === 0 ? 2 : 1));
+      });
+      this.match.players.forEach((p) => add(p.name, p.pos, 0));
+
+      return Array.from(map.values()).sort(
+        (a, b) => b.count - a.count || a.name.localeCompare(b.name)
+      );
+    },
+
     /** Agrega el historial en una tabla de posiciones por jugador. */
     rankingHistorico() {
       const map = new Map();
@@ -252,6 +278,7 @@
           ? {
               titulo: prev.titulo,
               lugar: prev.lugar,
+              hora: prev.hora,
               totalPlayers: prev.totalPlayers,
               precio: prev.precio,
               teamNames: prev.teamNames,

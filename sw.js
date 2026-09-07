@@ -5,7 +5,7 @@
    ============================================================ */
 'use strict';
 
-const VERSION = 'v3';
+const VERSION = 'v4';
 const SHELL_CACHE = 'hayfulbo-shell-' + VERSION;
 const FONT_CACHE = 'hayfulbo-fonts-' + VERSION;
 
@@ -83,7 +83,7 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  /* Navegación: red primero para tomar deploys nuevos, caché si no hay señal. */
+  /* Navegación: sale del mismo caché que el resto del shell (ver handleNavigation). */
   if (request.mode === 'navigate') {
     event.respondWith(handleNavigation(event));
     return;
@@ -101,16 +101,27 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
+/**
+ * El HTML sale del mismo caché que el JS y el CSS.
+ *
+ * Servir la navegación desde la red mientras los scripts salen del caché
+ * mezcla versiones: alcanza con que un deploy renombre un id para que el JS
+ * viejo no encuentre su elemento, tire una excepción y deje media app sin
+ * enganchar. Con el shell atómico, HTML y scripts son siempre de la misma
+ * generación y la versión nueva entra entera al activarse el worker nuevo.
+ */
 async function handleNavigation(event) {
+  const cache = await caches.open(SHELL_CACHE);
+  const cached = (await cache.match('./index.html')) || (await cache.match('./'));
+  if (cached) return cached;
+
   try {
     const preload = await event.preloadResponse;
     const response = preload || (await fetch(event.request));
-    const cache = await caches.open(SHELL_CACHE);
-    cache.put('./index.html', response.clone()).catch(() => null);
+    if (response && response.ok) cache.put('./index.html', response.clone()).catch(() => null);
     return response;
   } catch (_) {
-    const cache = await caches.open(SHELL_CACHE);
-    return (await cache.match('./index.html')) || (await cache.match('./')) || Response.error();
+    return Response.error();
   }
 }
 
