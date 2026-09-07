@@ -5,7 +5,7 @@
    ============================================================ */
 'use strict';
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL_CACHE = 'hayfulbo-shell-' + VERSION;
 const FONT_CACHE = 'hayfulbo-fonts-' + VERSION;
 
@@ -27,7 +27,7 @@ const SHELL = [
   './assets/favicon.svg',
 ];
 
-/* Los iconos son grandes: se cachean si están, pero no bloquean la instalación. */
+/* Los iconos son grandes: se cachean si están, pero no son imprescindibles. */
 const OPTIONAL = [
   './assets/icon-192.png',
   './assets/icon-512.png',
@@ -38,13 +38,22 @@ const OPTIONAL = [
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(SHELL_CACHE).then(async (cache) => {
-      await cache.addAll(SHELL);
-      await Promise.all(OPTIONAL.map((url) => cache.add(url).catch(() => null)));
-    })
-  );
+  event.waitUntil(precache());
 });
+
+/**
+ * Guarda el shell archivo por archivo: con addAll, un solo 404 aborta todo
+ * el precacheo y la app se queda sin modo offline sin que nadie se entere.
+ */
+async function precache() {
+  const cache = await caches.open(SHELL_CACHE);
+  const urls = SHELL.concat(OPTIONAL);
+  const results = await Promise.allSettled(
+    urls.map((url) => cache.add(new Request(url, { cache: 'reload' })))
+  );
+  const failed = urls.filter((_, i) => results[i].status === 'rejected');
+  if (failed.length) console.warn('[hayfulbo][sw] sin cachear:', failed.join(', '));
+}
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
