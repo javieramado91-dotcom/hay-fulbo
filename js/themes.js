@@ -9,6 +9,32 @@
 
   const HF = (global.HF = global.HF || {});
 
+  /* ------------------------------------------------------------
+     Pieles de la app. Los colores viven en el CSS (bloques
+     [data-skin]); acá sólo están el id, el nombre y los dos tonos
+     que muestra el selector.
+     ------------------------------------------------------------ */
+  const SKINS = [
+    { id: 'cancha', name: 'Cancha', hint: 'Verde césped', dots: ['#22ff88', '#00d9ff'], bg: '#04140b' },
+    { id: 'hielo', name: 'Hielo', hint: 'Celeste de noche', dots: ['#3ad9ff', '#8b7cff'], bg: '#04101a' },
+    { id: 'fuego', name: 'Fuego', hint: 'Naranja de brasa', dots: ['#ff7a1a', '#ff3d8a'], bg: '#170a04' },
+  ];
+
+  const DEFAULT_SKIN = 'cancha';
+
+  function skinById(id) {
+    return SKINS.find((s) => s.id === id) || SKINS[0];
+  }
+
+  /** Pinta la piel en <html> y deja la barra del sistema del mismo color. */
+  function applySkin(id) {
+    const skin = skinById(id);
+    document.documentElement.setAttribute('data-skin', skin.id);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', skin.bg);
+    return skin.id;
+  }
+
   const LIST = [
     {
       id: 'noche',
@@ -73,6 +99,8 @@
   ];
 
   const byId = (id) => LIST.find((t) => t.id === id) || LIST[0];
+
+  HF.skins = { list: SKINS, byId: skinById, apply: applySkin, DEFAULT: DEFAULT_SKIN };
 
   HF.themes = { list: LIST, byId };
 })(window);

@@ -67,6 +67,54 @@
   }
 
   /* ============================================================
+     Colores de la app
+     ============================================================ */
+  function renderSkinPicker() {
+    const box = $('#skins');
+    if (!box) return;
+    box.textContent = '';
+
+    HF.skins.list.forEach((skin) => {
+      const dots = el('span', { class: 'skin__dots' });
+      skin.dots.forEach((color) => {
+        const dot = el('i');
+        dot.style.background = color;
+        dots.appendChild(dot);
+      });
+
+      const row = el('button', {
+        class: 'skin' + (store.prefs.skin === skin.id ? ' is-on' : ''),
+        type: 'button', 'data-skin': skin.id,
+      }, [
+        dots,
+        el('span', { class: 'skin__body' }, [
+          el('b', { text: skin.name }),
+          el('i', { text: skin.hint }),
+        ]),
+        icon('i-check', 'skin__check'),
+      ]);
+      row.style.background = skin.bg;
+      box.appendChild(row);
+    });
+  }
+
+  function setSkin(id) {
+    store.prefs.skin = HF.skins.apply(id);
+    store.save();
+    renderSkinPicker();
+  }
+
+  function bindSkins() {
+    bind('#btn-skin', 'click', () => {
+      renderSkinPicker();
+      U.openModal('skin-modal');
+    });
+
+    const box = $('#skins');
+    if (box) on(box, 'click', '.skin', (_, btn) => setSkin(btn.dataset.skin));
+  }
+
+  /* ============================================================
      Modo de armado
      ============================================================ */
   /**
@@ -876,10 +924,15 @@
     step('figura', bindResult);
     step('historial', bindHistory);
     step('flyers', bindFlyerModal);
+    step('colores', bindSkins);
 
     step('navegación', () => {
       const steps = $('#steps');
       if (steps) on(steps, 'click', '.step', (_, btn) => setStep(U.toInt(btn.dataset.step, 1)));
+    });
+
+    step('colores guardados', () => {
+      store.prefs.skin = HF.skins.apply(store.prefs.skin);
     });
 
     step('render inicial', () => {

@@ -108,13 +108,13 @@
   const store = {
     match: makeMatch(),
     history: [],
-    prefs: { theme: 'noche', step: 1 },
+    prefs: { theme: 'noche', skin: 'cancha', step: 1 },
 
     /* --- ciclo de vida --- */
     load() {
       const shared = readShareLink();
       this.history = normalizeHistory(U.storage.get(KEY_HISTORY, []));
-      this.prefs = Object.assign({ theme: 'noche', step: 1 }, U.storage.get(KEY_PREFS, {}));
+      this.prefs = Object.assign({ theme: 'noche', skin: 'cancha', step: 1 }, U.storage.get(KEY_PREFS, {}));
       this.match = sanitizeMatch(shared || U.storage.get(KEY_MATCH, null));
       return { fromLink: !!shared };
     },

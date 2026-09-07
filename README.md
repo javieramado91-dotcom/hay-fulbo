@@ -26,7 +26,8 @@ Sin backend, sin cuentas, sin build: es HTML, CSS y JavaScript plano.
 
 Cada flyer se dibuja en `<canvas>` a resolución final y se puede descargar como PNG o mandar
 directo por el menú de compartir del sistema (Web Share API) cuando el navegador lo soporta.
-Hay **cinco paletas** para elegir: Noche, Fuego, Hielo, Oro y Neón.
+Hay **cinco paletas** para elegir: Noche, Fuego, Hielo, Oro y Neón. Son las de los flyers y no
+tienen que ver con los colores de la app, que se eligen aparte desde el engranaje.
 
 ---
 
@@ -37,6 +38,12 @@ Hay **cinco paletas** para elegir: Noche, Fuego, Hielo, Oro y Neón.
   prende desde el interruptor **Sin armado de equipos** del paso 1 o desde el botón **Los armamos en
   la cancha** de la pantalla de equipos, y se vuelve atrás desde el aviso que queda en puntajes.
   La opción viaja en el link compartible y se mantiene al arrancar un partido nuevo.
+- **Tres pieles para la app.** El engranaje de arriba a la derecha cambia los colores de toda la
+  interfaz: **Cancha** (verde césped), **Hielo** (celeste de noche) y **Fuego** (naranja de brasa).
+  Toda la piel sale de variables CSS en bloques `:root[data-skin]`, así que no hay ningún color
+  escrito a mano en los componentes. La elección se aplica antes del primer frame —con un script
+  chico en el `<head>`— para que la app no arranque verde y salte de color, y de paso pinta la
+  barra del sistema del celu con `theme-color`.
 - **Todo se guarda solo.** El partido en curso, las preferencias y el historial viven en `localStorage`:
   cerrás la app y volvés justo donde estabas. Al arrancar un partido nuevo se conservan el título,
   la cancha, el horario, el formato y el precio, y el plantel entra con un toque en **Los de siempre**.
@@ -103,7 +110,7 @@ js/util.js            DOM, formato, almacenamiento, toasts, confeti, modales
 js/state.js           Estado único, persistencia y codec de links compartibles
 js/teams.js           Balanceador de equipos
 js/canvas-kit.js      Primitivas de dibujo: cancha, red, camisetas, tipografía
-js/themes.js          Las cinco paletas de los flyers
+js/themes.js          Las cinco paletas de los flyers y las tres pieles de la app
 js/flyers.js          Los tres flyers 9:16
 js/ui.js              Render de pantallas y eventos
 js/pwa.js             Instalación, offline y aviso de versión nueva
