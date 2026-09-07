@@ -20,6 +20,7 @@
     10: 'Fútbol 5', 12: 'Fútbol 6', 14: 'Fútbol 7', 16: 'Fútbol 8', 22: 'Fútbol 11',
   };
 
+  const SCORE_STEP = 0.25;
   const MIN_PLAYERS = 2;
   const MAX_PLAYERS = 40;
   const DEFAULT_LEVEL = 7;
@@ -76,7 +77,7 @@
           const player = makePlayer(p && p.name, p && p.pos, p && p.level);
           if (p && typeof p.id === 'string') player.id = p.id;
           player.paid = !!(p && p.paid);
-          player.score = U.clamp(U.toInt(p && p.score, 7), 1, 10);
+          player.score = U.clamp(U.toQuarter(p && p.score, 7), 1, 10);
           player.goals = U.clamp(U.toInt(p && p.goals, 0), 0, 99);
           return player;
         }).filter((p) => p.name)
@@ -258,7 +259,7 @@
           if (!map.has(key)) map.set(key, { key, name: p.name, games: 0, sum: 0, goals: 0, mvps: 0 });
           const row = map.get(key);
           row.games += 1;
-          row.sum += U.toInt(p.score, 7);
+          row.sum += U.toQuarter(p.score, 7);
           row.goals += U.toInt(p.goals, 0);
           if (p.mvp) row.mvps += 1;
           row.name = p.name;
@@ -362,7 +363,7 @@
   /* ---------------- exports ---------------- */
   HF.store = store;
   HF.model = {
-    POSITIONS, POS_LABEL, FORMATS, MIN_PLAYERS, MAX_PLAYERS, DEFAULT_LEVEL,
+    POSITIONS, POS_LABEL, FORMATS, MIN_PLAYERS, MAX_PLAYERS, DEFAULT_LEVEL, SCORE_STEP,
     makeMatch, makePlayer, sanitizeMatch, buildShareLink,
   };
 })(window);

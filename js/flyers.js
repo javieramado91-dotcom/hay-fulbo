@@ -535,10 +535,18 @@
     K.strokeRR(ctx, px, py, pw, ph, 34, K.rgba(t.warn, 0.35), 2);
 
     /* Bloque de puntaje, arriba a la izquierda. */
-    K.text(ctx, String(mvp.score), px + 60, py + 150, {
+    const scoreInt = Math.floor(mvp.score);
+    const scoreFrac = mvp.score - scoreInt;
+    const scoreW = K.text(ctx, String(scoreInt), px + 60, py + 150, {
       family: K.FONT_DISPLAY, weight: '400', size: 130, color: t.warn,
       glow: K.rgba(t.warn, 0.55), glowBlur: 28,
     });
+    if (scoreFrac > 0) {
+      K.text(ctx, U.formatScore(scoreFrac).replace(/^0/, ''), px + 68 + scoreW, py + 150, {
+        family: K.FONT_DISPLAY, weight: '400', size: 56, color: t.warn,
+        glow: K.rgba(t.warn, 0.45), glowBlur: 18,
+      });
+    }
     K.text(ctx, 'PUNTOS', px + 64, py + 188, {
       family: K.FONT_BODY, weight: '800', size: 22, color: K.rgba(t.sub, 0.8), tracking: 5,
     });
@@ -578,7 +586,7 @@
 
     /* Fila de estadísticas. */
     const stats = [
-      { label: 'NOTA', value: mvp.score + '/10' },
+      { label: 'NOTA', value: U.formatScore(mvp.score) + '/10' },
       { label: 'GOLES', value: String(mvp.goals) },
       { label: 'NIVEL', value: String(mvp.level) },
     ];
@@ -619,7 +627,7 @@
         family: K.FONT_COND, weight: '700', size: Math.min(34, rowH * 0.5),
         color: isTop ? t.warn : t.ink, maxWidth: pw - 300,
       });
-      K.text(ctx, String(player.score), px + pw - 68, y + rowH * 0.64, {
+      K.text(ctx, U.formatScore(player.score), px + pw - 68, y + rowH * 0.64, {
         family: K.FONT_DISPLAY, weight: '400', size: Math.min(36, rowH * 0.52),
         color: isTop ? t.warn : t.ink, align: 'right',
       });

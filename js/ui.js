@@ -583,14 +583,34 @@
 
     m.players.forEach((player) => {
       const isMvp = m.mvpId === player.id;
-      const scoreEl = el('span', { class: 'rt__score', text: player.score + '/10' });
-      const range = el('input', { type: 'range', min: 1, max: 10, value: player.score, 'aria-label': 'Puntaje de ' + player.name });
+      const scoreEl = el('button', {
+        class: 'rt__score', type: 'button', 'data-act': 'quarter',
+        title: 'Tocá para sumar un cuarto de punto',
+        'aria-label': 'Sumar un cuarto de punto a ' + player.name,
+        text: U.formatScore(player.score) + '/10',
+      });
+      const range = el('input', {
+        type: 'range', min: 1, max: 10, step: model.SCORE_STEP,
+        value: player.score, 'aria-label': 'Puntaje de ' + player.name,
+      });
 
-      range.addEventListener('input', () => {
-        const value = U.toInt(range.value, 7);
-        scoreEl.textContent = value + '/10';
+      const paintScore = (value) => {
+        scoreEl.textContent = U.formatScore(value) + '/10';
+        range.value = value;
         store.updatePlayer(player.id, { score: value });
         $('#mvp-badge').textContent = store.mvp ? 'Figura: ' + store.mvp.name : 'Sin figura';
+      };
+
+      range.addEventListener('input', () => {
+        paintScore(U.clamp(U.toQuarter(range.value, 7), 1, 10));
+      });
+
+      scoreEl.addEventListener('click', () => {
+        const actual = store.playerById(player.id);
+        if (!actual) return;
+        const entero = Math.floor(actual.score);
+        const cuarto = (Math.round((actual.score - entero) * 4) + 1) % 4;
+        paintScore(U.clamp(entero + cuarto / 4, 1, 10));
       });
 
       box.appendChild(
@@ -693,7 +713,7 @@
             el('span', { class: 'rk__pos', text: String(i + 1) }),
             el('span', { class: 'rk__name', text: row.name }),
             el('span', { class: 'rk__meta' }, [
-              el('b', { text: row.avg.toFixed(1) }),
+              el('b', { text: U.formatScore(Math.round(row.avg * 100) / 100) }),
               `${row.games} PJ · ${row.goals} G${row.mvps ? ' · ' + row.mvps + ' MVP' : ''}`,
             ]),
           ])

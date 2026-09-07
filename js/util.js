@@ -60,6 +60,20 @@
     return Number.isFinite(n) ? n : fallback;
   }
 
+  /** Los puntajes van de a cuartos: 7 · 7,25 · 7,5 · 7,75 · 8. */
+  function toQuarter(value, fallback) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.round(n * 4) / 4;
+  }
+
+  /** 7 → "7" · 7.5 → "7,5" · 7.25 → "7,25", con la coma de acá. */
+  function formatScore(n) {
+    const v = Number(n);
+    if (!Number.isFinite(v)) return '0';
+    return v.toLocaleString('es-AR', { maximumFractionDigits: 2 });
+  }
+
   /** Normaliza para comparar nombres (sin tildes, sin case). */
   function normalize(str) {
     return String(str || '')
@@ -336,7 +350,7 @@
   /* ---------------- exports ---------------- */
   HF.util = {
     $, $$, el, icon, on,
-    uid, clamp, toInt, normalize, titleCase, initials,
+    uid, clamp, toInt, toQuarter, formatScore, normalize, titleCase, initials,
     formatDateShort, formatDateLong, formatTime, todayISO, money, parseISODate,
     storage, encodeB64Url, decodeB64Url, copyText,
     toast, confetti,

@@ -509,8 +509,15 @@ input[type=date],input[type=time]{min-height:44px}
 .rt.is-mvp{border-color:var(--gold);background:rgba(255,203,61,.06)}
 .rt__top{display:flex;align-items:center;gap:8px}
 .rt__name{flex:1;min-width:0;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rt__score{font-family:var(--font-cond);font-size:20px;font-weight:700;color:var(--accent);min-width:34px;text-align:right}
-.rt.is-mvp .rt__score{color:var(--gold)}
+.rt__score{
+  font-family:var(--font-cond);font-size:20px;font-weight:700;
+  color:var(--accent);min-width:70px;text-align:center;
+  padding:2px 9px;border-radius:9px;transition:.14s;
+  background:var(--tile-1);border:1px solid var(--line-soft);
+}
+.rt__score:hover{border-color:var(--accent)}
+.rt__score:active{transform:scale(.94)}
+.rt.is-mvp .rt__score{color:var(--gold);border-color:var(--gold)}
 .rt__bottom{display:flex;align-items:center;gap:9px}
 .rt__bottom input[type=range]{flex:1;accent-color:var(--accent);height:22px}
 .rt__goals{display:flex;align-items:center;gap:4px;background:var(--tile-1);border-radius:9px;padding:3px}

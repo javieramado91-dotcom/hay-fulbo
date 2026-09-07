@@ -15,7 +15,7 @@ Sin backend, sin cuentas, sin build: es HTML, CSS y JavaScript plano.
 | **1 · Partido** | Título, cancha, fecha, horario, formato (F5 a F11 o libre) y lo que sale el turno por persona. |
 | **2 · Lista** | Alta de jugadores con su puesto, botón **Los de siempre** para traer el plantel habitual de un toque, suplentes automáticos al pasarse del cupo, control de quién pagó, importación de listas pegadas de WhatsApp y texto listo para volver a pegar en el grupo. |
 | **3 · Equipos** | Balanceador que reparte a los titulares en dos equipos parejos y los dibuja en formación sobre la cancha. Abajo de todo, **Ir a puntajes y figura** sigue al paso que viene, y **Los armamos en la cancha** saltea el balanceador para siempre. |
-| **4 · Figura** | Puntaje de 1 a 10 por jugador, goles y elección de la figura del partido. |
+| **4 · Figura** | Puntaje de 1 a 10 por jugador **de a cuartos** (7 · 7,25 · 7,5 · 7,75), goles y elección de la figura del partido. |
 | **5 · Historial** | Ranking histórico por promedio, partidos jugados, goles y MVPs de todos los picados guardados. |
 
 ### Los tres flyers (1080×1920)
@@ -50,6 +50,9 @@ tienen que ver con los colores de la app, que se eligen aparte desde el engranaj
   El input de nombres además autocompleta con todos los que ya jugaron.
 - **Link para compartir la convocatoria.** El estado del partido se comprime en el hash de la URL,
   así que cualquiera del grupo abre el mismo link y ve la misma lista, sin servidor de por medio.
+- **Los puntajes van de a cuartos.** El riel deja 4 píxeles por cuarto en un teléfono, así que a mano
+  es imposible clavarlo: se desliza para el punto entero y se toca el número, que cicla
+  `.00 → .25 → .50 → .75`. El historial mezcla partidos viejos con notas enteras sin drama.
 - **El nivel se aprende del historial.** No se carga a mano: cuando anotás a alguien que ya jugó,
   su nivel para el balanceador sale del promedio de las notas que le puso el grupo en los
   partidos anteriores. El que debuta arranca en 7.
