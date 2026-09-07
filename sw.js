@@ -5,7 +5,7 @@
    ============================================================ */
 'use strict';
 
-const VERSION = 'v5';
+const VERSION = 'v6';
 const SHELL_CACHE = 'hayfulbo-shell-' + VERSION;
 const FONT_CACHE = 'hayfulbo-fonts-' + VERSION;
 

@@ -144,9 +144,6 @@
     get missing() {
       return this.match.totalPlayers - this.match.players.length;
     },
-    get paidCount() {
-      return this.match.players.filter((p) => p.paid).length;
-    },
     get formatLabel() {
       const n = this.match.totalPlayers;
       return (FORMATS[n] || 'Formato libre') + ' · ' + n + ' jugadores';

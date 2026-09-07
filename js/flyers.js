@@ -126,11 +126,16 @@
     const pillH = Math.min(78, (box.h - gap * (rows - 1)) / rows);
     const fontSize = Math.max(16, Math.min(32, pillH * 0.44));
 
+    /* Con pocas filas las pastillas topan su alto máximo: el sobrante se
+       reparte arriba y abajo en vez de acumularse al pie. */
+    const usado = rows * (pillH + gap) - gap;
+    const topY = box.y + Math.max(0, (box.h - usado) / 2);
+
     for (let i = 0; i < slots; i++) {
       const col = Math.floor(i / rows);
       const row = i % rows;
       const x = box.x + col * (cellW + gap);
-      const y = box.y + row * (pillH + gap);
+      const y = topY + row * (pillH + gap);
       const player = players[i];
       const isSub = i >= box.starters;
       const tone = isSub ? t.accent2 : t.accent;
@@ -156,7 +161,7 @@
         maxWidth: cellW - pillH - 22,
       });
     }
-    return box.y + rows * (pillH + gap) - gap;
+    return topY + usado;
   }
 
   function paintCTA(ctx, t, label) {
@@ -263,35 +268,38 @@
       ctx.restore();
     }
 
-    const rosterTop = barY + 40;
+    /*
+     * La franja de plata sólo aparece si hay precio cargado. Sin él no aporta
+     * nada que la barra de progreso no diga ya, y esos 108px le quedan mejor
+     * a la nómina.
+     */
+    const precio = match.precio;
     const stripH = 82;
-    const stripY = CTA_TOP - stripH - 26;
+    const rosterTop = barY + 40;
+    const rosterBottom = precio > 0 ? CTA_TOP - stripH - 50 : CTA_TOP - 30;
+
     paintRoster(ctx, t, match.players, slots, {
-      x: M, y: rosterTop, w: INNER, h: stripY - rosterTop - 24, starters: total,
+      x: M, y: rosterTop, w: INNER, h: rosterBottom - rosterTop, starters: total,
     });
 
-    /* Plata y cupos. */
-    const precio = match.precio;
-    K.fillRR(ctx, M, stripY, INNER, stripH, 26, K.rgba(t.ink, 0.06));
-    K.strokeRR(ctx, M, stripY, INNER, stripH, 26, K.rgba(t.ink, 0.12), 2);
     if (precio > 0) {
+      const stripY = CTA_TOP - stripH - 26;
+      const subs = Math.max(0, count - total);
+      const cupo = subs > 0
+        ? subs + ' EN BANCO'
+        : missing > 0
+          ? missing + (missing === 1 ? ' LUGAR LIBRE' : ' LUGARES LIBRES')
+          : count + ' CONFIRMADOS';
+
+      K.fillRR(ctx, M, stripY, INNER, stripH, 26, K.rgba(t.ink, 0.06));
+      K.strokeRR(ctx, M, stripY, INNER, stripH, 26, K.rgba(t.ink, 0.12), 2);
       K.icon(ctx, 'money', M + 46, stripY + 41, 42, t.accent);
       K.text(ctx, U.money(precio) + ' POR PERSONA', M + 82, stripY + 52, {
         family: K.FONT_COND, weight: '700', size: 40, color: t.ink, maxWidth: INNER - 340,
       });
-      K.text(ctx, 'PAGARON ' + store.paidCount + '/' + count, W - M - 30, stripY + 52, {
+      K.text(ctx, cupo, W - M - 30, stripY + 52, {
         family: K.FONT_BODY, weight: '800', size: 24, color: K.rgba(t.sub, 0.8), align: 'right', tracking: 2,
       });
-    } else {
-      K.icon(ctx, 'shirt', M + 46, stripY + 41, 42, t.accent);
-      K.text(ctx, count + ' CONFIRMADOS', M + 82, stripY + 52, {
-        family: K.FONT_COND, weight: '700', size: 40, color: t.ink, maxWidth: INNER - 340,
-      });
-      const subs = Math.max(0, count - total);
-      K.text(ctx, subs > 0 ? subs + ' EN BANCO' : Math.max(0, missing) + ' LUGARES LIBRES',
-        W - M - 30, stripY + 52, {
-          family: K.FONT_BODY, weight: '800', size: 24, color: K.rgba(t.sub, 0.8), align: 'right', tracking: 2,
-        });
     }
 
     paintCTA(ctx, t, missing > 0 ? 'ANOTATE EN EL GRUPO · #HAYFULBO' : 'NOS VEMOS EN LA CANCHA · #HAYFULBO');

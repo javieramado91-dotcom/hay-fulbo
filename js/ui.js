@@ -174,10 +174,7 @@
     if (m.fecha) chips.push(U.formatDateShort(m.fecha));
     if (m.hora) chips.push(U.formatTime(m.hora) + ' hs');
     if (m.lugar) chips.push(m.lugar);
-    if (m.precio > 0) {
-      chips.push(U.money(m.precio) + ' por persona');
-      chips.push(`Pagaron ${store.paidCount}/${count}`);
-    }
+    if (m.precio > 0) chips.push(U.money(m.precio) + ' por persona');
     chips.forEach((c) => meta.appendChild(el('span', { text: c })));
   }
 
