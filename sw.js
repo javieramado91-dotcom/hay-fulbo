@@ -5,7 +5,7 @@
    ============================================================ */
 'use strict';
 
-const VERSION = 'v4';
+const VERSION = 'v5';
 const SHELL_CACHE = 'hayfulbo-shell-' + VERSION;
 const FONT_CACHE = 'hayfulbo-fonts-' + VERSION;
 
@@ -38,6 +38,13 @@ const OPTIONAL = [
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', (event) => {
+  /*
+   * Toma el control apenas termina de precachear. Con el shell atómico la
+   * versión entra completa o no entra, así que no hay riesgo de mezclar
+   * archivos; a cambio, nadie queda encerrado en una versión rota esperando
+   * a cerrar todas las pestañas.
+   */
+  self.skipWaiting();
   event.waitUntil(precache());
 });
 

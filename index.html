@@ -361,6 +361,28 @@
   </div>
 </div>
 
+<script>
+/*
+ * Registro del service worker, inline y a propósito.
+ *
+ * Es lo único que no puede llegar desde un caché viejo, así que una versión
+ * anterior del JavaScript nunca puede dejar la app sin forma de actualizarse.
+ * El worker nuevo se activa solo (skipWaiting) y acá recargamos para quedar
+ * con HTML, CSS y JS de la misma generación.
+ */
+(function () {
+  if (!('serviceWorker' in navigator)) return;
+  var reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (reloading) return;
+    reloading = true;
+    location.reload();
+  });
+  navigator.serviceWorker.register('./sw.js', { scope: './' }).then(function (reg) {
+    reg.update();
+  }).catch(function () { /* sin service worker la app funciona igual */ });
+})();
+</script>
 <script src="js/util.js"></script>
 <script src="js/pwa.js"></script>
 <script src="js/state.js"></script>

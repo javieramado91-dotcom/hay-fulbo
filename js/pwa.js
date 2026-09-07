@@ -13,7 +13,6 @@
 
   let deferredPrompt = null;
   let waitingWorker = null;
-  let reloading = false;
 
   /* ---------------- estado del entorno ---------------- */
 
@@ -130,18 +129,12 @@
     /* En iOS el banner se muestra igual, con instrucciones en vez de prompt. */
     if (isIOS() && !isStandalone()) setTimeout(() => showBanner('ios'), 1200);
 
+    /* El registro lo hace un script inline en el HTML; acá sólo miramos el
+       resultado para poder avisar si alguna versión queda esperando. */
     if (!('serviceWorker' in navigator)) return;
-
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (reloading) return;
-      reloading = true;
-      global.location.reload();
-    });
-
-    navigator.serviceWorker
-      .register('./sw.js', { scope: './' })
-      .then(watchRegistration)
-      .catch((err) => console.warn('[hayfulbo] no se pudo registrar el service worker', err));
+    navigator.serviceWorker.getRegistration()
+      .then((reg) => { if (reg) watchRegistration(reg); })
+      .catch(() => null);
   }
 
   HF.pwa = { init, isStandalone, isIOS, promptInstall };
