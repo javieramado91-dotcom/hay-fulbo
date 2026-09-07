@@ -271,12 +271,12 @@
     });
 
     /* Plata y cupos. */
-    const perHead = store.perHead;
+    const precio = match.precio;
     K.fillRR(ctx, M, stripY, INNER, stripH, 26, K.rgba(t.ink, 0.06));
     K.strokeRR(ctx, M, stripY, INNER, stripH, 26, K.rgba(t.ink, 0.12), 2);
-    if (perHead > 0) {
+    if (precio > 0) {
       K.icon(ctx, 'money', M + 46, stripY + 41, 42, t.accent);
-      K.text(ctx, U.money(perHead) + ' POR CABEZA', M + 82, stripY + 52, {
+      K.text(ctx, U.money(precio) + ' POR PERSONA', M + 82, stripY + 52, {
         family: K.FONT_COND, weight: '700', size: 40, color: t.ink, maxWidth: INNER - 340,
       });
       K.text(ctx, 'PAGARON ' + store.paidCount + '/' + count, W - M - 30, stripY + 52, {

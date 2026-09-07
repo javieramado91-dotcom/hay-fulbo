@@ -59,7 +59,7 @@
     $('#f-fecha').value = m.fecha;
     $('#f-hora').value = m.hora;
     $('#f-total').value = m.totalPlayers;
-    $('#f-costo').value = m.costo || '';
+    $('#f-precio').value = m.precio || '';
     $('#f-teamA').value = m.teamNames.a;
     $('#f-teamB').value = m.teamNames.b;
     renderFormatUI();
@@ -69,7 +69,6 @@
     const total = store.match.totalPlayers;
     $('#format-label').textContent = store.formatLabel;
     $$('#presets button').forEach((b) => b.classList.toggle('is-on', U.toInt(b.dataset.total, 0) === total));
-    $('#per-head').textContent = store.perHead > 0 ? U.money(store.perHead) : '$0';
   }
 
   function bindSetup() {
@@ -85,9 +84,9 @@
     bindText('#f-fecha', 'fecha');
     bindText('#f-hora', 'hora');
 
-    $('#f-costo').addEventListener('input', (ev) => {
-      store.commit((m) => { m.costo = Math.max(0, U.toInt(ev.target.value, 0)); });
-      renderFormatUI();
+    $('#f-precio').addEventListener('input', (ev) => {
+      store.commit((m) => { m.precio = Math.max(0, U.toInt(ev.target.value, 0)); });
+      renderStatus();
     });
 
     const setTotal = (value) => {
@@ -158,8 +157,10 @@
     if (m.fecha) chips.push(U.formatDateShort(m.fecha));
     if (m.hora) chips.push(U.formatTime(m.hora) + ' hs');
     if (m.lugar) chips.push(m.lugar);
-    if (store.perHead > 0) chips.push(U.money(store.perHead) + ' c/u');
-    if (store.perHead > 0) chips.push(`Pagaron ${store.paidCount}/${count}`);
+    if (m.precio > 0) {
+      chips.push(U.money(m.precio) + ' por persona');
+      chips.push(`Pagaron ${store.paidCount}/${count}`);
+    }
     chips.forEach((c) => meta.appendChild(el('span', { text: c })));
   }
 
@@ -170,16 +171,6 @@
       if (pos === player.pos) opt.selected = true;
       select.appendChild(opt);
     });
-    return select;
-  }
-
-  function levelSelect(player) {
-    const select = el('select', { class: 'pl__sel', 'data-field': 'level', 'aria-label': 'Nivel' });
-    for (let i = 1; i <= 10; i++) {
-      const opt = el('option', { value: i, text: 'Nivel ' + i });
-      if (i === player.level) opt.selected = true;
-      select.appendChild(opt);
-    }
     return select;
   }
 
@@ -203,7 +194,6 @@
           el('div', { class: 'pl__name', text: player.name }),
           el('div', { class: 'pl__meta' }, [
             posSelect(player),
-            levelSelect(player),
             isSub ? el('span', { class: 'pl__tag pl__tag--sub', text: 'SUPLENTE' }) : null,
           ]),
         ]),
@@ -257,8 +247,7 @@
 
     on($('#roster'), 'change', '.pl__sel', (_, select) => {
       const id = select.closest('.pl').dataset.id;
-      const field = select.dataset.field;
-      store.updatePlayer(id, field === 'level' ? { level: U.toInt(select.value, 7) } : { pos: select.value });
+      store.updatePlayer(id, { pos: select.value });
       renderTeams();
     });
 
@@ -588,7 +577,7 @@
     if (m.lugar) lines.push(`📍 ${m.lugar}`);
     const when = [U.formatDateLong(m.fecha), m.hora ? U.formatTime(m.hora) + ' hs' : ''].filter(Boolean).join(' · ');
     if (when) lines.push(`🗓️ ${when}`);
-    if (store.perHead > 0) lines.push(`💵 ${U.money(store.perHead)} por cabeza`);
+    if (m.precio > 0) lines.push(`💵 ${U.money(m.precio)} por persona`);
     lines.push('');
     lines.push(missing > 0 ? `⚠️ *FALTAN ${missing}* para completar los ${m.totalPlayers}` : '🔥 *¡ESTAMOS TODOS!*');
     lines.push('');

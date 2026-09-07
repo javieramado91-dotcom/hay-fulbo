@@ -34,7 +34,7 @@
         fecha: U.todayISO(),
         hora: '',
         totalPlayers: 10,
-        costo: 0,
+        precio: 0,
         players: [],
         teamNames: { a: 'Claritos', b: 'Oscuritos' },
         teams: null,
@@ -66,7 +66,7 @@
     m.fecha = /^\d{4}-\d{2}-\d{2}$/.test(raw.fecha) ? raw.fecha : U.todayISO();
     m.hora = /^\d{2}:\d{2}$/.test(raw.hora) ? raw.hora : '';
     m.totalPlayers = U.clamp(U.toInt(raw.totalPlayers, 10), MIN_PLAYERS, MAX_PLAYERS);
-    m.costo = Math.max(0, U.toInt(raw.costo, 0));
+    m.precio = Math.max(0, U.toInt(raw.precio, 0));
     m.createdAt = U.toInt(raw.createdAt, Date.now());
 
     m.players = Array.isArray(raw.players)
@@ -143,10 +143,6 @@
     },
     get missing() {
       return this.match.totalPlayers - this.match.players.length;
-    },
-    get perHead() {
-      const heads = this.match.players.length || this.match.totalPlayers;
-      return this.match.costo > 0 ? Math.ceil(this.match.costo / heads) : 0;
     },
     get paidCount() {
       return this.match.players.filter((p) => p.paid).length;
@@ -257,7 +253,7 @@
               titulo: prev.titulo,
               lugar: prev.lugar,
               totalPlayers: prev.totalPlayers,
-              costo: prev.costo,
+              precio: prev.precio,
               teamNames: prev.teamNames,
             }
           : null
@@ -292,7 +288,7 @@
       f: m.fecha,
       h: m.hora,
       n: m.totalPlayers,
-      c: m.costo,
+      c: m.precio,
       p: m.players.map((p) => [p.name, p.pos, p.level, p.paid ? 1 : 0]),
     };
   }
@@ -305,7 +301,7 @@
       fecha: d.f,
       hora: d.h,
       totalPlayers: d.n,
-      costo: d.c,
+      precio: d.c,
       players: (Array.isArray(d.p) ? d.p : []).map((row) =>
         Array.isArray(row)
           ? { name: row[0], pos: row[1], level: row[2], paid: !!row[3] }

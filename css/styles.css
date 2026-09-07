@@ -161,10 +161,6 @@ input[type=date],input[type=time]{min-height:44px}
 .input-affix{position:relative}
 .input-affix span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-weight:700;font-size:14px}
 .input-affix input{padding-left:26px}
-.readout{
-  background:#050f0a;border:1px dashed var(--line);border-radius:var(--r-md);
-  padding:11px 13px;font-family:var(--font-cond);font-size:22px;font-weight:700;color:var(--accent);
-}
 
 .pill{
   font-size:10.5px;font-weight:800;letter-spacing:.05em;

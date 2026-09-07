@@ -12,8 +12,8 @@ Sin backend, sin cuentas, sin build: es HTML, CSS y JavaScript plano.
 
 | Paso | Para qué sirve |
 |---|---|
-| **1 · Partido** | Título, cancha, fecha, horario, formato (F5 a F11 o libre) y costo de la cancha con el cálculo automático por cabeza. |
-| **2 · Lista** | Alta de jugadores con puesto y nivel, suplentes automáticos al pasarse del cupo, control de quién pagó, importación de listas pegadas de WhatsApp y texto listo para volver a pegar en el grupo. |
+| **1 · Partido** | Título, cancha, fecha, horario, formato (F5 a F11 o libre) y lo que sale el turno por persona. |
+| **2 · Lista** | Alta de jugadores con su puesto, suplentes automáticos al pasarse del cupo, control de quién pagó, importación de listas pegadas de WhatsApp y texto listo para volver a pegar en el grupo. |
 | **3 · Equipos** | Balanceador que reparte a los titulares en dos equipos parejos y los dibuja en formación sobre la cancha. |
 | **4 · Figura** | Puntaje de 1 a 10 por jugador, goles y elección de la figura del partido. |
 | **5 · Historial** | Ranking histórico por promedio, partidos jugados, goles y MVPs de todos los picados guardados. |
@@ -35,8 +35,9 @@ Hay **cinco paletas** para elegir: Noche, Fuego, Hielo, Oro y Neón.
 - **Todo se guarda solo.** El partido en curso, las preferencias y el historial viven en `localStorage`.
 - **Link para compartir la convocatoria.** El estado del partido se comprime en el hash de la URL,
   así que cualquiera del grupo abre el mismo link y ve la misma lista, sin servidor de por medio.
-- **El nivel se aprende del historial.** Cuando anotás a alguien que ya jugó, la app le propone
-  el promedio de sus partidos anteriores como nivel para el balanceador.
+- **El nivel se aprende del historial.** No se carga a mano: cuando anotás a alguien que ya jugó,
+  su nivel para el balanceador sale del promedio de las notas que le puso el grupo en los
+  partidos anteriores. El que debuta arranca en 7.
 - **Balanceo real.** Reparte a los arqueros primero, hace un draft serpiente por nivel y después
   optimiza con intercambios locales minimizando diferencia de nivel, de puestos y de cantidad.
 - **Formaciones de verdad.** Según cuántos jugadores de campo tenga cada equipo se elige una
