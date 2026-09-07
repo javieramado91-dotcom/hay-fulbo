@@ -37,6 +37,7 @@
         precio: 0,
         players: [],
         teamNames: { a: 'Claritos', b: 'Oscuritos' },
+        skipTeams: false,
         teams: null,
         mvpId: null,
         createdAt: Date.now(),
@@ -68,6 +69,7 @@
     m.totalPlayers = U.clamp(U.toInt(raw.totalPlayers, 10), MIN_PLAYERS, MAX_PLAYERS);
     m.precio = Math.max(0, U.toInt(raw.precio, 0));
     m.createdAt = U.toInt(raw.createdAt, Date.now());
+    m.skipTeams = !!raw.skipTeams;
 
     m.players = Array.isArray(raw.players)
       ? raw.players.slice(0, MAX_PLAYERS + 20).map((p) => {
@@ -279,6 +281,7 @@
               totalPlayers: prev.totalPlayers,
               precio: prev.precio,
               teamNames: prev.teamNames,
+              skipTeams: prev.skipTeams,
             }
           : null
       );
@@ -313,6 +316,7 @@
       h: m.hora,
       n: m.totalPlayers,
       c: m.precio,
+      s: m.skipTeams ? 1 : 0,
       p: m.players.map((p) => [p.name, p.pos, p.level, p.paid ? 1 : 0]),
     };
   }
@@ -326,6 +330,7 @@
       hora: d.h,
       totalPlayers: d.n,
       precio: d.c,
+      skipTeams: !!d.s,
       players: (Array.isArray(d.p) ? d.p : []).map((row) =>
         Array.isArray(row)
           ? { name: row[0], pos: row[1], level: row[2], paid: !!row[3] }

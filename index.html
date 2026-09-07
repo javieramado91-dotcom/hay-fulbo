@@ -85,7 +85,7 @@
   <nav class="steps" id="steps" role="tablist" aria-label="Pasos">
     <button class="step is-active" data-step="1" role="tab"><span class="step__n">1</span><span class="step__l">Partido</span></button>
     <button class="step" data-step="2" role="tab"><span class="step__n">2</span><span class="step__l">Lista</span></button>
-    <button class="step" data-step="3" role="tab"><span class="step__n">3</span><span class="step__l">Equipos</span></button>
+    <button class="step" data-step="3" role="tab" id="step-teams"><span class="step__n">3</span><span class="step__l">Equipos</span></button>
     <button class="step" data-step="4" role="tab"><span class="step__n">4</span><span class="step__l">Figura</span></button>
     <button class="step" data-step="5" role="tab"><span class="step__n">5</span><span class="step__l">Historial</span></button>
   </nav>
@@ -147,6 +147,15 @@
             <input id="f-precio" type="number" min="0" step="100" placeholder="0" inputmode="numeric">
           </div>
         </div>
+
+        <label class="switch" for="f-skip-teams">
+          <input id="f-skip-teams" type="checkbox">
+          <span class="switch__box"><svg><use href="#i-check"></use></svg></span>
+          <span class="switch__body">
+            <b>Sin armado de equipos</b>
+            <i>Los equipos los hacemos en la cancha. Se saltea el balanceador y vas derecho a los puntajes y la figura.</i>
+          </span>
+        </label>
       </div>
 
       <button class="btn btn--primary btn--xl" id="btn-open-call">
@@ -203,7 +212,7 @@
         <button class="btn btn--soft" id="btn-flyer-call"><svg><use href="#i-image"></use></svg> Flyer 9:16</button>
         <button class="btn btn--soft" id="btn-copy-wa"><svg><use href="#i-wa"></use></svg> Copiar texto</button>
         <button class="btn btn--soft" id="btn-copy-link"><svg><use href="#i-link"></use></svg> Copiar link</button>
-        <button class="btn btn--soft" id="btn-goto-teams"><svg><use href="#i-shirt"></use></svg> Armar equipos</button>
+        <button class="btn btn--soft" id="btn-goto-teams"><svg><use href="#i-shirt"></use></svg> <span>Armar equipos</span></button>
       </div>
     </section>
 
@@ -243,6 +252,10 @@
           <h2 class="card__title"><svg><use href="#i-medal"></use></svg> Puntajes y figura</h2>
           <span class="pill" id="mvp-badge">Sin figura</span>
         </div>
+        <p class="muted" id="skip-note" hidden>
+          Los equipos se arman en la cancha: el balanceador está apagado.
+          <button class="link" type="button" id="btn-enable-teams">Quiero armarlos acá</button>
+        </p>
         <div id="ratings" class="ratings"></div>
       </div>
 

@@ -34,7 +34,10 @@
      Navegación
      ============================================================ */
   function setStep(n, silent) {
-    const step = U.clamp(n, 1, 5);
+    let step = U.clamp(n, 1, 5);
+
+    /* Sin balanceador el paso de equipos no existe: se cae directo en puntajes. */
+    if (step === 3 && store.match.skipTeams) step = 4;
 
     if (step === 3 && store.match.players.length < 2) {
       U.toast('Necesitás al menos 2 jugadores para armar equipos.', 'info');
@@ -61,6 +64,51 @@
     if (step === 4) renderRatings();
     if (step === 5) renderHistory();
     if (!silent) window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ============================================================
+     Modo de armado
+     ============================================================ */
+  /**
+   * Refleja el modo "sin armado de equipos" en toda la interfaz.
+   * El paso 3 se esconde y la barra se renumera para que los pasos
+   * visibles sigan siendo 1, 2, 3, 4 y no queden huecos.
+   */
+  function renderModeUI() {
+    const skip = !!store.match.skipTeams;
+
+    const toggle = $('#f-skip-teams');
+    if (toggle) {
+      toggle.checked = skip;
+      const wrap = toggle.closest('.switch');
+      if (wrap) wrap.classList.toggle('is-on', skip);
+    }
+
+    let shown = 0;
+    $$('.step').forEach((btn) => {
+      const off = skip && U.toInt(btn.dataset.step, 0) === 3;
+      btn.classList.toggle('is-off', off);
+      if (off) return;
+      shown += 1;
+      const num = btn.querySelector('.step__n');
+      if (num) num.textContent = String(shown);
+    });
+
+    const goTeams = $('#btn-goto-teams');
+    if (goTeams) {
+      const use = goTeams.querySelector('use');
+      const label = goTeams.querySelector('span');
+      if (use) use.setAttribute('href', skip ? '#i-medal' : '#i-shirt');
+      if (label) label.textContent = skip ? 'Ir a puntajes' : 'Armar equipos';
+    }
+
+    const note = $('#skip-note');
+    if (note) note.hidden = !skip;
+  }
+
+  function setSkipTeams(skip) {
+    store.commit((m) => { m.skipTeams = !!skip; });
+    renderModeUI();
   }
 
   /* ============================================================
@@ -119,6 +167,16 @@
     bind('#total-minus', 'click', () => setTotal(store.match.totalPlayers - 1));
     bind('#total-plus', 'click', () => setTotal(store.match.totalPlayers + 1));
     bind('#f-total', 'change', (ev) => setTotal(ev.target.value));
+
+    bind('#f-skip-teams', 'change', (ev) => {
+      const skip = !!ev.target.checked;
+      setSkipTeams(skip);
+      if (skip && currentStep === 3) setStep(4, true);
+      U.toast(
+        skip ? 'Listo: los equipos se arman en la cancha.' : 'Vuelve el paso de armado de equipos.',
+        'info'
+      );
+    });
 
     bind('#btn-open-call', 'click', () => {
       setStep(2);
@@ -515,6 +573,11 @@
       renderRatings();
     });
 
+    bind('#btn-enable-teams', 'click', () => {
+      setSkipTeams(false);
+      setStep(3);
+    });
+
     bind('#btn-flyer-mvp', 'click', () => {
       if (!store.mvp) {
         U.toast('Cargá jugadores para elegir la figura.', 'info');
@@ -767,6 +830,7 @@
      Bootstrap
      ============================================================ */
   function refreshAll() {
+    renderModeUI();
     renderStatus();
     renderRoster();
     renderKnownNames();
