@@ -24,7 +24,8 @@ Sin backend, sin cuentas, sin build: es HTML, CSS y JavaScript plano.
 
 - **Convocatoria** — cuántos faltan, cuándo, dónde, cuánto sale y la lista completa con los cupos libres.
 - **Formaciones** — los dos equipos plantados sobre una cancha, con camiseta, dorsal y nombre.
-- **Figura** — el MVP en formato figurita de álbum, con puntaje, puesto y el resto de las notas.
+- **Figura** — el MVP en formato figurita de álbum, con puntaje, puesto y **las notas de todos**:
+  la tabla se acomoda en una, dos o tres columnas según cuántos hayan jugado.
 - **Parte disciplinario** — cuántos están suspendidos y por cuántas fechas, con las tarjetas dibujadas
   y la ficha del grupo. El amarillo y el rojo no salen de la paleta: una amarilla es amarilla en
   cualquier tema.

@@ -483,8 +483,7 @@
     if (!mvp) return;
 
     const ranking = [...match.players]
-      .sort((a, b) => b.score - a.score || b.goals - a.goals)
-      .slice(0, 4);
+      .sort((a, b) => b.score - a.score || b.goals - a.goals);
 
     paintStage(ctx, t, { marks: false, accent: t.warn });
     paintFrame(ctx, t);
@@ -606,35 +605,85 @@
       }
     });
 
-    /* Resto del podio, dentro de la misma figurita. */
-    const tableY = statY + 126;
-    const tableH = py + ph - 34 - tableY;
+    /* Los puntajes de todos, dentro de la misma figurita. */
+    const tableY = statY + 122;
+    const tableH = py + ph - 30 - tableY;
     ctx.fillStyle = K.rgba(t.ink, 0.12);
     ctx.fillRect(px + 60, tableY, pw - 120, 2);
-    K.text(ctx, 'PUNTAJES DEL PARTIDO', px + 60, tableY + 44, {
+    K.text(ctx, 'PUNTAJES DEL PARTIDO', px + 60, tableY + 42, {
       family: K.FONT_BODY, weight: '800', size: 20, color: K.rgba(t.sub, 0.65), tracking: 4,
     });
-
-    const rowH = Math.min(70, (tableH - 66) / Math.max(1, ranking.length));
-    ranking.forEach((player, i) => {
-      const y = tableY + 70 + i * rowH;
-      const isTop = player.id === mvp.id;
-      K.text(ctx, String(i + 1), px + 76, y + rowH * 0.62, {
-        family: K.FONT_COND, weight: '700', size: 30,
-        color: isTop ? t.warn : K.rgba(t.sub, 0.5), align: 'center',
-      });
-      K.text(ctx, player.name.toUpperCase(), px + 108, y + rowH * 0.64, {
-        family: K.FONT_COND, weight: '700', size: Math.min(34, rowH * 0.5),
-        color: isTop ? t.warn : t.ink, maxWidth: pw - 300,
-      });
-      K.text(ctx, U.formatScore(player.score), px + pw - 68, y + rowH * 0.64, {
-        family: K.FONT_DISPLAY, weight: '400', size: Math.min(36, rowH * 0.52),
-        color: isTop ? t.warn : t.ink, align: 'right',
-      });
+    paintScoreTable(ctx, t, ranking, mvp, {
+      x: px + 60, y: tableY + 62, w: pw - 120, h: tableH - 62,
     });
 
     paintContextLine(ctx, t, [match.titulo, match.lugar]);
     paintCTA(ctx, t, 'FIGURA ELEGIDA POR EL GRUPO');
+  }
+
+  /**
+   * Los puntajes en la caja que haya: una columna con pocos, dos o tres
+   * cuando son muchos. Si ni así entran legibles, corta y avisa cuántos
+   * quedaron afuera —mejor eso que una lista que no se lee—.
+   */
+  function paintScoreTable(ctx, t, ranking, mvp, box) {
+    const total = ranking.length;
+    if (!total) return;
+
+    const cols = total <= 6 ? 1 : total <= 16 ? 2 : 3;
+    const gap = cols === 1 ? 0 : cols === 2 ? 28 : 20;
+    const colW = (box.w - gap * (cols - 1)) / cols;
+
+    const MIN_ROW = 34;
+    let filas = Math.ceil(total / cols);
+    let rowH = box.h / filas;
+    let listado = ranking;
+    let cortados = 0;
+
+    if (rowH < MIN_ROW) {
+      const maxFilas = Math.max(2, Math.floor(box.h / MIN_ROW));
+      rowH = box.h / maxFilas;
+      /* Una fila menos en el reparto: la de abajo queda libre para el "+N",
+         que si no se superpone con los que sí entraron. */
+      filas = maxFilas - 1;
+      listado = ranking.slice(0, filas * cols);
+      cortados = total - listado.length;
+    }
+    rowH = Math.min(rowH, 70);
+
+    const nameSize = U.clamp(rowH * 0.5, 22, 34);
+    const scoreSize = U.clamp(rowH * 0.52, 24, 36);
+    const numSize = U.clamp(rowH * 0.44, 20, 30);
+    const numW = numSize * 1.5;
+    const scoreW = scoreSize * 2.4;
+
+    listado.forEach((player, i) => {
+      const col = Math.floor(i / filas);
+      const fila = i % filas;
+      const x = box.x + col * (colW + gap);
+      const y = box.y + fila * rowH;
+      const isTop = player.id === mvp.id;
+
+      K.text(ctx, String(i + 1), x + numW / 2, y + rowH * 0.66, {
+        family: K.FONT_COND, weight: '700', size: numSize,
+        color: isTop ? t.warn : K.rgba(t.sub, 0.5), align: 'center',
+      });
+      K.text(ctx, player.name.toUpperCase(), x + numW + 10, y + rowH * 0.68, {
+        family: K.FONT_COND, weight: '700', size: nameSize,
+        color: isTop ? t.warn : t.ink, maxWidth: colW - numW - scoreW - 20,
+      });
+      K.text(ctx, U.formatScore(player.score), x + colW, y + rowH * 0.68, {
+        family: K.FONT_DISPLAY, weight: '400', size: scoreSize,
+        color: isTop ? t.warn : t.ink, align: 'right',
+      });
+    });
+
+    if (cortados > 0) {
+      K.text(ctx, '+' + cortados + ' MÁS', box.x + box.w / 2, box.y + filas * rowH + rowH * 0.7, {
+        family: K.FONT_BODY, weight: '800', size: 22, color: K.rgba(t.sub, 0.55),
+        align: 'center', tracking: 4,
+      });
+    }
   }
 
   function rankLabel(score) {
