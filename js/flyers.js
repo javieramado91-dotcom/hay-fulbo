@@ -819,6 +819,169 @@
   }
 
   /* ============================================================
+     5. LA TARJETA DE UNO
+     ============================================================ */
+  /**
+   * El anuncio de una tarjeta puntual. `data.card` es la tarjeta y
+   * `data.row` la ficha del jugador tal como quedó después de ponerla.
+   */
+  function renderCard(ctx, data) {
+    const { t, card, row } = data;
+    if (!card) throw new Error('Falta la tarjeta a dibujar');
+
+    const esRoja = card.type === 'red';
+    const tono = esRoja ? CARD_R : CARD_Y;
+    const nombre = (card.name || '').toUpperCase();
+    const veredicto = cardVerdict(row, esRoja);
+
+    paintStage(ctx, t, { accent: tono });
+    paintFrame(ctx, t);
+    paintBrand(ctx, t, U.formatDateShort(card.date));
+    paintKicker(ctx, t, esRoja ? 'ROJA' : 'AMARILLA', tono);
+
+    /*
+     * Se miden los bloques antes de dibujar y el conjunto se centra entre el
+     * kicker y el pie: con un nombre corto y sin motivo, si no, queda medio
+     * flyer vacío.
+     */
+    const LABEL = 84;
+    const nameSize = K.fit(ctx, nombre, INNER - 60, {
+      family: K.FONT_DISPLAY, weight: '400', max: 210, min: 48,
+    });
+    const razon = card.reason ? wrapText(ctx, card.reason, INNER - 130, { family: K.FONT_COND, weight: '700', size: 46 }) : [];
+    const razonH = razon.length ? 40 + razon.length * 58 : 0;
+    const headSize = K.fit(ctx, veredicto.headline, INNER - 120, {
+      family: K.FONT_DISPLAY, weight: '400', max: 116, min: 42,
+    });
+
+    const alto =
+      LABEL + 34 +
+      nameSize + (razonH ? 74 : 56) +
+      (razonH ? razonH + 60 : 0) +
+      38 + 26 +
+      headSize + 22 +
+      (veredicto.sub ? 50 : 0);
+
+    const top = 300;
+    const bottom = CTA_TOP - 92;
+    let y = top + Math.max(0, (bottom - top - alto) / 2);
+
+    /* La tarjeta inclinada va de fondo del nombre, no en una Y fija. */
+    const cardCy = y + LABEL + 34 + nameSize * 0.42;
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    K.glow(ctx, W / 2, cardCy, 520, tono, 0.22);
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(W / 2, cardCy);
+    ctx.rotate(-0.14);
+    K.fillRR(ctx, -238, -330, 476, 660, 40, K.rgba(tono, 0.16));
+    K.strokeRR(ctx, -238, -330, 476, 660, 40, K.rgba(tono, 0.5), 5);
+    ctx.restore();
+
+    K.text(ctx, esRoja ? 'ROJA PARA' : 'AMARILLA PARA', W / 2, y + LABEL * 0.78, {
+      family: K.FONT_DISPLAY, weight: '400', size: LABEL, color: K.rgba(t.sub, 0.92),
+      align: 'center', tracking: 8,
+    });
+    y += LABEL + 34;
+
+    const baseline = y + nameSize * 0.78;
+    K.text(ctx, nombre, W / 2, baseline, {
+      family: K.FONT_DISPLAY, weight: '400', size: nameSize, align: 'center', tracking: 2,
+      color: (c, x, w) => K.lg(c, x, baseline - nameSize, x + w, baseline, [
+        [0, '#ffffff'], [0.55, tono], [1, esRoja ? t.warn : '#ffffff'],
+      ]),
+      glow: K.rgba(tono, 0.8), glowBlur: 55,
+      stroke: K.rgba(tono, 0.3), strokeWidth: 5,
+    });
+    y += nameSize + (razonH ? 74 : 56);
+
+    /* El motivo, que es el punto de la tarjeta. */
+    if (razonH) {
+      K.fillRR(ctx, M, y, INNER, razonH, 28, K.rgba(t.ink, 0.07));
+      K.strokeRR(ctx, M, y, INNER, razonH, 28, K.rgba(tono, 0.32), 2);
+      razon.forEach((line, i) => {
+        K.text(ctx, line, W / 2, y + 62 + i * 58, {
+          family: K.FONT_COND, weight: '700', size: 46, color: t.ink, align: 'center',
+        });
+      });
+      y += razonH + 60;
+    }
+
+    /* Y lo que la tarjeta significa. */
+    K.text(ctx, veredicto.kicker, W / 2, y + 28, {
+      family: K.FONT_BODY, weight: '800', size: 27, color: K.rgba(t.sub, 0.6),
+      align: 'center', tracking: 5,
+    });
+    y += 38 + 26;
+
+    K.text(ctx, veredicto.headline, W / 2, y + headSize * 0.78, {
+      family: K.FONT_DISPLAY, weight: '400', size: headSize, align: 'center', tracking: 3,
+      color: veredicto.grave ? tono : t.ink,
+      glow: veredicto.grave ? K.rgba(tono, 0.6) : null, glowBlur: 34,
+    });
+    y += headSize + 22;
+
+    if (veredicto.sub) {
+      K.text(ctx, veredicto.sub, W / 2, y + 34, {
+        family: K.FONT_COND, weight: '700', size: 42, color: K.rgba(t.sub, 0.85),
+        align: 'center', maxWidth: INNER - 60,
+      });
+    }
+
+    paintContextLine(ctx, t, [data.match.titulo, 'Cada dos amarillas, una roja']);
+    paintCTA(ctx, t, esRoja ? 'ROJA DIRECTA' : 'AMARILLA DEL GRUPO');
+  }
+
+  /** Parte el texto en líneas que entren en el ancho pedido. */
+  function wrapText(ctx, str, maxWidth, font) {
+    K.setFont(ctx, font.weight, font.size, font.family);
+    const palabras = String(str).split(/\s+/).filter(Boolean);
+    const lines = [];
+    let actual = '';
+    palabras.forEach((p) => {
+      const prueba = actual ? actual + ' ' + p : p;
+      if (ctx.measureText(prueba).width > maxWidth && actual) {
+        lines.push(actual);
+        actual = p;
+      } else {
+        actual = prueba;
+      }
+    });
+    if (actual) lines.push(actual);
+    return lines.slice(0, 3);
+  }
+
+  /** Qué le pasa al jugador con esta tarjeta encima. */
+  function cardVerdict(row, esRoja) {
+    if (!row) return { kicker: 'QUEDA', headline: 'ANOTADA', sub: '', grave: esRoja };
+
+    if (row.pending > 0) {
+      return {
+        kicker: esRoja ? 'ROJA DIRECTA' : 'DOBLE AMARILLA',
+        headline: 'SUSPENDIDO',
+        sub: (row.pending === 1 ? '1 fecha' : row.pending + ' fechas') + ' sin jugar',
+        grave: true,
+      };
+    }
+    if (row.loose) {
+      return {
+        kicker: 'LE QUEDA',
+        headline: 'UNA AMARILLA',
+        sub: 'Con la próxima es roja',
+        grave: false,
+      };
+    }
+    return {
+      kicker: 'FICHA',
+      headline: row.yellows === 1 ? '1 AMARILLA' : row.yellows + ' AMARILLAS',
+      sub: 'Sin fechas pendientes',
+      grave: false,
+    };
+  }
+
+  /* ============================================================
      API
      ============================================================ */
   const RENDERERS = {
@@ -826,13 +989,15 @@
     teams: { fn: renderTeams, title: 'Flyer de formaciones', file: 'formaciones' },
     mvp: { fn: renderMvp, title: 'Flyer de la figura', file: 'figura' },
     cards: { fn: renderCards, title: 'Flyer de tarjetas', file: 'tarjetas' },
+    card: { fn: renderCard, title: 'Flyer de la tarjeta', file: 'tarjeta' },
   };
 
   /**
    * Dibuja un flyer en un canvas de 1080x1920.
-   * @param {string} kind call | teams | mvp | cards
+   * @param {string} kind call | teams | mvp | cards | card
+   * @param {object} [extra] datos propios del flyer, como la tarjeta a mostrar
    */
-  async function render(kind, canvas, store, themeId) {
+  async function render(kind, canvas, store, themeId, extra) {
     const spec = RENDERERS[kind];
     if (!spec) throw new Error('Flyer desconocido: ' + kind);
 
@@ -844,7 +1009,10 @@
     ctx.clearRect(0, 0, W, H);
     ctx.textBaseline = 'alphabetic';
 
-    spec.fn(ctx, { match: store.match, store: store, t: HF.themes.byId(themeId) });
+    spec.fn(ctx, Object.assign(
+      { match: store.match, store: store, t: HF.themes.byId(themeId) },
+      extra || {}
+    ));
     return canvas;
   }
 
@@ -852,9 +1020,12 @@
     return RENDERERS[kind] || RENDERERS.call;
   }
 
-  function filename(kind, match) {
+  function filename(kind, match, extra) {
     const spec = meta(kind);
-    const slug = U.normalize(match.titulo || match.lugar || 'partido')
+    const base = kind === 'card' && extra && extra.card
+      ? extra.card.name
+      : match.titulo || match.lugar || 'partido';
+    const slug = U.normalize(base)
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
       .slice(0, 28) || 'partido';

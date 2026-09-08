@@ -20,7 +20,7 @@ Sin backend, sin cuentas, sin build: es HTML, CSS y JavaScript plano.
 | **5 · Tarjetas** | Amarillas y rojas del grupo con el motivo escrito. Cada dos amarillas sale una roja, y las rojas suspenden de a una fecha más cada vez. Tiene su flyer y su texto para pegar en el grupo. |
 | **6 · Historial** | Ranking histórico por promedio, partidos jugados, goles y MVPs de todos los picados guardados. |
 
-### Los cuatro flyers (1080×1920)
+### Los cinco flyers (1080×1920)
 
 - **Convocatoria** — cuántos faltan, cuándo, dónde, cuánto sale y la lista completa con los cupos libres.
 - **Formaciones** — los dos equipos plantados sobre una cancha, con camiseta, dorsal y nombre.
@@ -28,6 +28,9 @@ Sin backend, sin cuentas, sin build: es HTML, CSS y JavaScript plano.
 - **Parte disciplinario** — cuántos están suspendidos y por cuántas fechas, con las tarjetas dibujadas
   y la ficha del grupo. El amarillo y el rojo no salen de la paleta: una amarilla es amarilla en
   cualquier tema.
+- **La tarjeta** — *"Amarilla para Fulano"* con la tarjeta grande de fondo, el motivo escrito y lo que
+  le cuesta: suspendido tantas fechas, o una amarilla suelta y con la próxima es roja. Sale solo al
+  poner una tarjeta y queda a un toque en cada línea del registro.
 
 Cada flyer se dibuja en `<canvas>` a resolución final y se puede descargar como PNG o mandar
 directo por el menú de compartir del sistema (Web Share API) cuando el navegador lo soporta.

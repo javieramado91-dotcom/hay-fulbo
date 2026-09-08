@@ -17,6 +17,7 @@
 
   let currentStep = 1;
   let currentFlyer = 'call';
+  let currentFlyerData = null;
   let cardType = 'yellow';
 
   /**
@@ -804,6 +805,7 @@
                 el('div', { class: 'disc__name', text: card.name }),
                 el('div', { class: 'disc__meta', text: [U.formatDateShort(card.date), card.reason].filter(Boolean).join(' · ') }),
               ]),
+              el('button', { class: 'disc__btn', 'data-act': 'flyer', title: 'Flyer de esta tarjeta', 'aria-label': 'Flyer de esta tarjeta' }, [icon('i-image')]),
               el('button', { class: 'disc__btn disc__btn--del', 'data-act': 'undo', 'aria-label': 'Borrar tarjeta' }, [icon('i-trash')]),
             ])
           );
@@ -888,7 +890,7 @@
     const date = ($('#f-card-date') || {}).value || U.todayISO();
 
     const antes = D().pendingFor(name);
-    D().add(name, cardType, reason, date);
+    const nueva = D().add(name, cardType, reason, date);
     const despues = D().pendingFor(name);
 
     U.closeModal('card-modal');
@@ -900,6 +902,37 @@
     } else {
       U.toast((cardType === 'red' ? 'Roja' : 'Amarilla') + ' para ' + name + '.', 'check');
     }
+
+    /* La tarjeta recién puesta es la que se quiere mandar al grupo. */
+    if (nueva) openCardFlyer(nueva.id);
+  }
+
+  /**
+   * Abre el flyer de una tarjeta. La ficha va tal como quedó ahora, que es
+   * lo que hace falta para decir si el jugador quedó suspendido o no.
+   */
+  function openCardFlyer(id) {
+    const card = D().cards.find((c) => c.id === id);
+    if (!card) return;
+    openFlyer('card', { card, row: D().rowOf(card.name) });
+  }
+
+  /** El anuncio de una tarjeta, para pegar en el grupo. */
+  function buildCardText(card) {
+    if (!card) return 'Hay Fulbo';
+    const row = D().rowOf(card.name);
+    const lines = [
+      `${card.type === 'red' ? '🟥 *ROJA*' : '🟨 *AMARILLA*'} para *${card.name}*`,
+    ];
+    if (card.reason) lines.push('_' + card.reason + '_');
+    lines.push('');
+    if (row && row.pending > 0) {
+      lines.push(`⛔ Queda suspendido ${fechasLabel(row.pending)}.`);
+    } else if (row && row.loose) {
+      lines.push('⚠️ Le queda una amarilla suelta: con la próxima es roja.');
+    }
+    lines.push('📲 Armado con Hay Fulbo');
+    return lines.join('\n');
   }
 
   /** El parte, listo para pegar en el grupo. */
@@ -980,6 +1013,10 @@
     });
 
     const log = $('#disc-log');
+    if (log) on(log, 'click', '[data-act="flyer"]', (_, btn) => {
+      openCardFlyer(btn.closest('.disc__log').dataset.id);
+    });
+
     if (log) on(log, 'click', '[data-act="undo"]', (_, btn) => {
       const id = btn.closest('.disc__log').dataset.id;
       D().remove(id);
@@ -1145,15 +1182,16 @@
   async function drawFlyer() {
     const canvas = $('#flyer-canvas');
     try {
-      await HF.flyers.render(currentFlyer, canvas, store, store.prefs.theme);
+      await HF.flyers.render(currentFlyer, canvas, store, store.prefs.theme, currentFlyerData);
     } catch (err) {
       console.error('[hayfulbo] error al dibujar el flyer', err);
       U.toast('No se pudo generar el flyer.', 'error');
     }
   }
 
-  async function openFlyer(kind) {
+  async function openFlyer(kind, extra) {
     currentFlyer = kind;
+    currentFlyerData = extra || null;
     $('#flyer-title').textContent = HF.flyers.meta(kind).title;
     renderThemePicker();
     U.openModal('flyer-modal');
@@ -1179,7 +1217,7 @@
         return;
       }
       const url = URL.createObjectURL(blob);
-      const link = el('a', { href: url, download: HF.flyers.filename(currentFlyer, store.match) });
+      const link = el('a', { href: url, download: HF.flyers.filename(currentFlyer, store.match, currentFlyerData) });
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -1190,10 +1228,11 @@
     bind('#btn-share', 'click', async () => {
       const canvas = $('#flyer-canvas');
       const blob = await canvasToBlob(canvas);
-      const filename = HF.flyers.filename(currentFlyer, store.match);
+      const filename = HF.flyers.filename(currentFlyer, store.match, currentFlyerData);
       const text = currentFlyer === 'call' ? buildCallText()
         : currentFlyer === 'teams' ? buildTeamsText()
         : currentFlyer === 'cards' ? buildDisciplineText()
+        : currentFlyer === 'card' ? buildCardText(currentFlyerData && currentFlyerData.card)
         : store.match.titulo || 'Hay Fulbo';
 
       if (blob && navigator.canShare) {
@@ -1280,5 +1319,9 @@
     HF.kit.loadFonts();
   }
 
-  HF.ui = { init, reload, setStep, refreshAll, renderDiscipline, openFlyer, buildCallText, buildTeamsText, buildDisciplineText };
+  HF.ui = {
+    init, reload, setStep, refreshAll, renderDiscipline,
+    openFlyer, openCardFlyer,
+    buildCallText, buildTeamsText, buildDisciplineText, buildCardText,
+  };
 })(window);

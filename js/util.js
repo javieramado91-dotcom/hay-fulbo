@@ -302,7 +302,7 @@
     const modal = typeof id === 'string' ? $('#' + id) : id;
     if (!modal) return;
     modal.hidden = false;
-    modalStack.push(modal);
+    if (!modalStack.includes(modal)) modalStack.push(modal);
     document.body.style.overflow = 'hidden';
     const focusable = modal.querySelector('button, [href], input, select, textarea');
     if (focusable) setTimeout(() => focusable.focus({ preventScroll: true }), 40);
