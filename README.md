@@ -3,7 +3,8 @@
 Organizador de picados entre amigos con **flyers verticales 9:16** generados en el navegador.
 Sin backend, sin cuentas, sin build: es HTML, CSS y JavaScript plano.
 
-> Armá la convocatoria → sumá la gente → balanceá los equipos (o salteá el paso) → coroná la figura.
+> Armá la convocatoria → sumá la gente → balanceá los equipos (o salteá el paso) → coroná la figura
+> → poné las tarjetas.
 > Cada paso tiene su flyer de 1080×1920 listo para el estado de WhatsApp o una story de Instagram.
 
 ---
@@ -16,7 +17,8 @@ Sin backend, sin cuentas, sin build: es HTML, CSS y JavaScript plano.
 | **2 · Lista** | Alta de jugadores con su puesto, botón **Los de siempre** para traer el plantel habitual de un toque, suplentes automáticos al pasarse del cupo, control de quién pagó, importación de listas pegadas de WhatsApp y texto listo para volver a pegar en el grupo. |
 | **3 · Equipos** | Balanceador que reparte a los titulares en dos equipos parejos y los dibuja en formación sobre la cancha. Abajo de todo, **Ir a puntajes y figura** sigue al paso que viene, y **Los armamos en la cancha** saltea el balanceador para siempre. |
 | **4 · Figura** | Puntaje de 1 a 10 por jugador **de a cuartos** (7 · 7,25 · 7,5 · 7,75), goles y elección de la figura del partido. |
-| **5 · Historial** | Ranking histórico por promedio, partidos jugados, goles y MVPs de todos los picados guardados. |
+| **5 · Tarjetas** | Amarillas y rojas del grupo con el motivo escrito. Cada dos amarillas sale una roja, y las rojas suspenden de a una fecha más cada vez. |
+| **6 · Historial** | Ranking histórico por promedio, partidos jugados, goles y MVPs de todos los picados guardados. |
 
 ### Los tres flyers (1080×1920)
 
@@ -53,6 +55,12 @@ tienen que ver con los colores de la app, que se eligen aparte desde el engranaj
 - **Los puntajes van de a cuartos.** El riel deja 4 píxeles por cuarto en un teléfono, así que a mano
   es imposible clavarlo: se desliza para el punto entero y se toca el número, que cicla
   `.00 → .25 → .50 → .75`. El historial mezcla partidos viejos con notas enteras sin drama.
+- **Las tarjetas llevan la cuenta sola.** Cada dos amarillas sale una roja; la primera roja pesa una
+  fecha, la segunda dos, la tercera tres, y así. Lo único que se guarda son las tarjetas: rojas,
+  fechas debidas y fechas pendientes se recalculan en cada lectura, así que borrar una tarjeta
+  mal puesta deja los números bien sin arreglar nada a mano. Una fecha se cumple al cerrar un
+  partido en el que el sancionado **no estaba en la lista** —el que igual jugó la sigue debiendo— y
+  el suspendido aparece marcado en la nómina apenas se lo anota.
 - **El nivel se aprende del historial.** No se carga a mano: cuando anotás a alguien que ya jugó,
   su nivel para el balanceador sale del promedio de las notas que le puso el grupo en los
   partidos anteriores. El que debuta arranca en 7.
@@ -111,6 +119,7 @@ sw.js                 Service worker: caché offline y actualizaciones
 css/styles.css        Sistema de diseño: tokens, componentes, layout
 js/util.js            DOM, formato, almacenamiento, toasts, confeti, modales
 js/state.js           Estado único, persistencia y codec de links compartibles
+js/discipline.js      Amarillas, rojas y fechas de suspensión
 js/teams.js           Balanceador de equipos
 js/canvas-kit.js      Primitivas de dibujo: cancha, red, camisetas, tipografía
 js/themes.js          Las cinco paletas de los flyers y las tres pieles de la app

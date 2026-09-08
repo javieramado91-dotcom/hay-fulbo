@@ -469,6 +469,8 @@ input[type=date],input[type=time]{min-height:44px}
 }
 .pl__tag--ARQ{background:rgba(255,203,61,.16);color:var(--gold)}
 .pl__tag--sub{background:rgba(var(--accent-2-rgb),.16);color:var(--accent-2)}
+.pl__tag--out{background:rgba(255,90,90,.18);color:#ff9b9b}
+.pl.is-out{border-color:rgba(255,90,90,.4)}
 .pl__pay{
   width:30px;height:30px;flex:0 0 auto;border-radius:9px;display:grid;place-items:center;
   background:var(--tile-1);color:var(--ink-5);font-size:13px;transition:.15s;
@@ -601,6 +603,67 @@ input[type=date],input[type=time]{min-height:44px}
 }
 .th__dot{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.15)}
 .th.is-on{border-color:var(--accent);color:#fff;background:var(--tile-2)}
+
+/* ---------- tarjetas ---------- */
+.disc{display:flex;flex-direction:column;gap:7px}
+.disc__row,.disc__log{
+  display:flex;align-items:center;gap:10px;
+  background:var(--well);border:1px solid var(--line-soft);
+  border-radius:var(--r-md);padding:9px 11px;
+}
+.disc__row.is-out{border-color:rgba(255,90,90,.42);background:rgba(255,90,90,.06)}
+.disc__body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.disc__name{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.disc__meta{font-size:11px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.disc__log{align-items:flex-start}
+.disc__log .pip{margin-top:3px}
+.disc__log .disc__meta{white-space:normal;line-height:1.45;text-overflow:clip}
+.disc__tag{
+  flex:0 0 auto;font-size:9.5px;font-weight:800;letter-spacing:.05em;
+  padding:4px 8px;border-radius:999px;white-space:nowrap;
+}
+.disc__tag--out{background:rgba(255,90,90,.16);color:#ff9b9b}
+.disc__tag--ok{background:rgba(var(--accent-rgb),.12);color:var(--accent)}
+.disc__btn{
+  flex:0 0 auto;width:30px;height:30px;border-radius:9px;
+  display:grid;place-items:center;font-size:14px;
+  background:var(--tile-1);color:var(--ink-5);transition:.15s;
+}
+.disc__btn:hover{background:var(--tile-2);color:var(--accent)}
+.disc__btn--del:hover{color:var(--danger)}
+
+/* Las rojas y la amarilla suelta, dibujadas como tarjetitas. */
+.disc__pips{display:flex;align-items:center;gap:3px;flex:0 0 auto}
+.pip{
+  display:block;width:11px;height:15px;border-radius:2.5px;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.35);
+}
+.pip--y{background:#ffd23f}
+.pip--r{background:#ff4444}
+.pip--off{background:var(--tile-2);box-shadow:none}
+
+/* Elegir amarilla o roja. */
+.cardpick{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cardpick button{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:11px 6px;border-radius:var(--r-md);
+  background:var(--tile);border:1px solid var(--line-soft);
+  color:var(--ink-2);transition:.16s;
+}
+.cardpick button b{font-size:12.5px;font-weight:800;color:#fff}
+.cardpick button span{font-size:10px;color:var(--ink-3)}
+.cardpick button.is-on{border-color:var(--accent);box-shadow:var(--glow)}
+.cardpick__chip{display:block;width:15px;height:21px;border-radius:3px;margin-bottom:2px}
+.cardpick__chip--y{background:#ffd23f}
+.cardpick__chip--r{background:#ff4444}
+
+/* Motivos de un toque. */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{
+  font-size:11px;font-weight:700;padding:6px 10px;border-radius:999px;
+  background:var(--tile);border:1px solid var(--line-soft);color:var(--ink-2);transition:.16s;
+}
+.chips button:hover{border-color:var(--accent);color:var(--accent)}
 
 /* ---------- selector de colores de la app ---------- */
 .skins{display:flex;flex-direction:column;gap:8px}

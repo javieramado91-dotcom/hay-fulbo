@@ -8,7 +8,7 @@
   const HF = global.HF;
 
   function boot() {
-    const required = ['util', 'store', 'teams', 'kit', 'themes', 'flyers', 'ui'];
+    const required = ['util', 'store', 'discipline', 'teams', 'kit', 'themes', 'flyers', 'ui'];
     const missing = required.filter((key) => !HF || !HF[key]);
     if (missing.length) {
       console.error('[hayfulbo] faltan módulos:', missing.join(', '));
@@ -22,6 +22,9 @@
       console.error('[hayfulbo] no se pudo cargar el estado guardado', err);
       HF.store.reset(false);
     }
+
+    /* Las tarjetas van aparte del partido: una no tiene que voltear a la otra. */
+    run('tarjetas', () => HF.discipline.load());
 
     run('ui', () => HF.ui.init(session));
 

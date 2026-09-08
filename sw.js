@@ -5,7 +5,7 @@
    ============================================================ */
 'use strict';
 
-const VERSION = 'v11';
+const VERSION = 'v12';
 const SHELL_CACHE = 'hayfulbo-shell-' + VERSION;
 const FONT_CACHE = 'hayfulbo-fonts-' + VERSION;
 
@@ -17,6 +17,7 @@ const SHELL = [
   './css/styles.css',
   './js/util.js',
   './js/state.js',
+  './js/discipline.js',
   './js/teams.js',
   './js/canvas-kit.js',
   './js/themes.js',

@@ -13,8 +13,11 @@
   const store = HF.store;
   const model = HF.model;
 
+  const LAST_STEP = 6;
+
   let currentStep = 1;
   let currentFlyer = 'call';
+  let cardType = 'yellow';
 
   /**
    * Engancha un listener sin explotar si el elemento no está.
@@ -34,7 +37,7 @@
      Navegación
      ============================================================ */
   function setStep(n, silent) {
-    let step = U.clamp(n, 1, 5);
+    let step = U.clamp(n, 1, LAST_STEP);
 
     /* Sin balanceador el paso de equipos no existe: se cae directo en puntajes. */
     if (step === 3 && store.match.skipTeams) step = 4;
@@ -62,7 +65,8 @@
 
     if (step === 3) renderTeams();
     if (step === 4) renderRatings();
-    if (step === 5) renderHistory();
+    if (step === 5) renderDiscipline();
+    if (step === 6) renderHistory();
     if (!silent) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -348,13 +352,15 @@
 
     m.players.forEach((player, index) => {
       const isSub = index >= m.totalPlayers;
-      const row = el('div', { class: 'pl' + (isSub ? ' is-sub' : ''), 'data-id': player.id }, [
+      const debe = HF.discipline.pendingFor(player.name);
+      const row = el('div', { class: 'pl' + (isSub ? ' is-sub' : '') + (debe ? ' is-out' : ''), 'data-id': player.id }, [
         el('span', { class: 'pl__n', text: String(index + 1) }),
         el('div', { class: 'pl__body' }, [
           el('div', { class: 'pl__name', text: player.name }),
           el('div', { class: 'pl__meta' }, [
             posSelect(player),
             isSub ? el('span', { class: 'pl__tag pl__tag--sub', text: 'SUPLENTE' }) : null,
+            debe ? el('span', { class: 'pl__tag pl__tag--out', text: 'DEBE ' + (debe === 1 ? '1 FECHA' : debe + ' FECHAS') }) : null,
           ]),
         ]),
         el('button', {
@@ -385,7 +391,10 @@
       input.focus();
       refreshAll();
 
-      if (store.missing === 0) {
+      const debe = HF.discipline.pendingFor(result.player.name);
+      if (debe) {
+        U.toast(`Ojo: ${result.player.name} debe ${debe === 1 ? '1 fecha' : debe + ' fechas'} de suspensión.`, 'warn');
+      } else if (store.missing === 0) {
         U.confetti();
         U.toast('¡Lista completa! Estamos todos.', 'check');
       } else if (result.isSub) {
@@ -687,14 +696,264 @@
       })),
     });
 
+    const cumplieron = HF.discipline.serveMatch(m.players.map((p) => U.normalize(p.name)));
+
     U.confetti();
     U.toast('Partido guardado en el historial.', 'check');
+    if (cumplieron.length) {
+      const libres = cumplieron.filter((c) => c.left === 0).map((c) => c.name);
+      U.toast(
+        libres.length
+          ? `${libres.join(', ')} cumplió la suspensión.`
+          : `${cumplieron.length} sancionado${cumplieron.length === 1 ? '' : 's'} cumplió una fecha.`,
+        'info'
+      );
+    }
+    renderDiscipline();
     renderHistory();
-    setStep(5);
+    setStep(6);
   }
 
   /* ============================================================
-     Pantalla 5 — historial
+     Pantalla 5 — tarjetas
+     ============================================================ */
+  const D = () => HF.discipline;
+
+  function fechasLabel(n) {
+    return n === 1 ? '1 fecha' : n + ' fechas';
+  }
+
+  /** Las rojas de una ficha, dibujadas, y la amarilla suelta si quedó una. */
+  function cardPips(row) {
+    const box = el('span', { class: 'disc__pips' });
+    for (let i = 0; i < row.reds; i++) box.appendChild(el('i', { class: 'pip pip--r' }));
+    if (row.loose) box.appendChild(el('i', { class: 'pip pip--y' }));
+    if (!row.reds && !row.loose) box.appendChild(el('i', { class: 'pip pip--off' }));
+    return box;
+  }
+
+  function discRow(row, opts) {
+    const meta = [];
+    if (row.yellows) meta.push(row.yellows === 1 ? '1 amarilla' : row.yellows + ' amarillas');
+    if (row.directReds) meta.push(row.directReds === 1 ? '1 roja directa' : row.directReds + ' rojas directas');
+    if (row.served) meta.push('cumplió ' + row.served + ' de ' + row.owed);
+
+    const estado = row.pending > 0
+      ? el('span', { class: 'disc__tag disc__tag--out', text: 'DEBE ' + fechasLabel(row.pending).toUpperCase() })
+      : el('span', { class: 'disc__tag disc__tag--ok', text: 'HABILITADO' });
+
+    return el('div', { class: 'disc__row' + (row.pending > 0 ? ' is-out' : ''), 'data-key': row.key }, [
+      cardPips(row),
+      el('div', { class: 'disc__body' }, [
+        el('div', { class: 'disc__name', text: row.name }),
+        el('div', { class: 'disc__meta', text: meta.join(' · ') }),
+      ]),
+      estado,
+      opts && opts.serve && row.pending > 0
+        ? el('button', {
+            class: 'disc__btn', 'data-act': 'serve', title: 'Marcar una fecha cumplida',
+            'aria-label': 'Cumplió una fecha',
+          }, [icon('i-check')])
+        : null,
+    ]);
+  }
+
+  function renderDiscipline() {
+    const rows = D().rows();
+    const suspendidos = rows.filter((r) => r.pending > 0);
+
+    const badge = $('#disc-badge');
+    if (badge) {
+      const n = D().cards.length;
+      badge.textContent = n === 0 ? 'Sin tarjetas' : n === 1 ? '1 tarjeta' : n + ' tarjetas';
+    }
+    const suspBadge = $('#disc-susp-badge');
+    if (suspBadge) suspBadge.textContent = String(suspendidos.length);
+
+    const suspBox = $('#disc-suspended');
+    if (suspBox) {
+      suspBox.textContent = '';
+      if (!suspendidos.length) {
+        suspBox.appendChild(el('div', { class: 'empty' }, [icon('i-check'), el('span', { text: 'Nadie debe fechas. Están todos habilitados.' })]));
+      } else {
+        suspendidos.forEach((row) => suspBox.appendChild(discRow(row, { serve: true })));
+      }
+    }
+
+    const rowsBox = $('#disc-rows');
+    if (rowsBox) {
+      rowsBox.textContent = '';
+      if (!rows.length) {
+        rowsBox.appendChild(el('div', { class: 'empty' }, [icon('i-cards'), el('span', { text: 'Todavía no hay tarjetas puestas.' })]));
+      } else {
+        rows.forEach((row) => rowsBox.appendChild(discRow(row)));
+      }
+    }
+
+    const logBox = $('#disc-log');
+    if (logBox) {
+      logBox.textContent = '';
+      if (!D().cards.length) {
+        logBox.appendChild(el('div', { class: 'empty' }, [icon('i-history'), el('span', { text: 'Sin movimientos.' })]));
+      } else {
+        D().cards.slice(0, 20).forEach((card) => {
+          logBox.appendChild(
+            el('div', { class: 'disc__log', 'data-id': card.id }, [
+              el('i', { class: 'pip pip--' + (card.type === 'red' ? 'r' : 'y') }),
+              el('div', { class: 'disc__body' }, [
+                el('div', { class: 'disc__name', text: card.name }),
+                el('div', { class: 'disc__meta', text: [U.formatDateShort(card.date), card.reason].filter(Boolean).join(' · ') }),
+              ]),
+              el('button', { class: 'disc__btn disc__btn--del', 'data-act': 'undo', 'aria-label': 'Borrar tarjeta' }, [icon('i-trash')]),
+            ])
+          );
+        });
+      }
+    }
+  }
+
+  /* --- alta de tarjetas --- */
+  function renderCardNames() {
+    const list = $('#card-names');
+    if (!list) return;
+    list.textContent = '';
+    const vistos = new Set();
+    const push = (name) => {
+      const key = U.normalize(name);
+      if (!key || vistos.has(key)) return;
+      vistos.add(key);
+      list.appendChild(el('option', { value: name }));
+    };
+    store.match.players.forEach((p) => push(p.name));
+    store.knownPlayers().forEach((p) => push(p.name));
+  }
+
+  function renderCardType() {
+    $$('#card-type button').forEach((b) => b.classList.toggle('is-on', b.dataset.type === cardType));
+    const reason = $('#f-card-reason');
+    const count = $('#card-reason-count');
+    if (count && reason) count.textContent = (reason.value || '').length + '/140';
+    renderCardPreview();
+  }
+
+  /** Adelanta la consecuencia: nadie tendría que hacer la cuenta a mano. */
+  function renderCardPreview() {
+    const box = $('#card-preview');
+    if (!box) return;
+    const input = $('#f-card-name');
+    const name = U.titleCase((input && input.value) || '');
+    if (!name) {
+      box.textContent = 'Elegí a quién se la ponés.';
+      return;
+    }
+    const antes = D().rowOf(name) || { yellows: 0, directReds: 0, pending: 0 };
+    const yellows = antes.yellows + (cardType === 'yellow' ? 1 : 0);
+    const directReds = antes.directReds + (cardType === 'red' ? 1 : 0);
+    const reds = Math.floor(yellows / 2) + directReds;
+    const owed = (reds * (reds + 1)) / 2;
+    const served = Math.min(owed, U.toInt(D().served[U.normalize(name)], 0));
+    const pending = owed - served;
+
+    if (pending > antes.pending) {
+      box.textContent = name + ' queda suspendido ' + fechasLabel(pending) + '.';
+    } else if (yellows % 2 === 1) {
+      box.textContent = name + ' queda con una amarilla suelta: con la próxima es roja.';
+    } else {
+      box.textContent = name + ' queda sin fechas pendientes.';
+    }
+  }
+
+  function openCardModal(preset) {
+    cardType = 'yellow';
+    const name = $('#f-card-name');
+    const reason = $('#f-card-reason');
+    const date = $('#f-card-date');
+    if (name) name.value = preset || '';
+    if (reason) reason.value = '';
+    if (date) date.value = store.match.fecha || U.todayISO();
+    renderCardNames();
+    renderCardType();
+    U.openModal('card-modal');
+  }
+
+  function submitCard() {
+    const nameInput = $('#f-card-name');
+    const name = U.titleCase((nameInput && nameInput.value) || '');
+    if (!name) {
+      U.toast('Falta el nombre del jugador.', 'info');
+      if (nameInput) nameInput.focus();
+      return;
+    }
+    const reason = ($('#f-card-reason') || {}).value || '';
+    const date = ($('#f-card-date') || {}).value || U.todayISO();
+
+    const antes = D().pendingFor(name);
+    D().add(name, cardType, reason, date);
+    const despues = D().pendingFor(name);
+
+    U.closeModal('card-modal');
+    renderDiscipline();
+    refreshAll();
+
+    if (despues > antes) {
+      U.toast(name + ': roja. Queda suspendido ' + fechasLabel(despues) + '.', 'warn');
+    } else {
+      U.toast((cardType === 'red' ? 'Roja' : 'Amarilla') + ' para ' + name + '.', 'check');
+    }
+  }
+
+  function bindDiscipline() {
+    bind('#btn-add-card', 'click', () => openCardModal());
+    bind('#btn-card-ok', 'click', submitCard);
+
+    const tipos = $('#card-type');
+    if (tipos) on(tipos, 'click', 'button', (_, btn) => {
+      cardType = btn.dataset.type === 'red' ? 'red' : 'yellow';
+      renderCardType();
+    });
+
+    const presets = $('#card-presets');
+    if (presets) on(presets, 'click', 'button', (_, btn) => {
+      const area = $('#f-card-reason');
+      if (!area) return;
+      area.value = btn.textContent;
+      renderCardType();
+    });
+
+    bind('#f-card-reason', 'input', renderCardType);
+    bind('#f-card-name', 'input', renderCardPreview);
+
+    const susp = $('#disc-suspended');
+    if (susp) on(susp, 'click', '[data-act="serve"]', (_, btn) => {
+      const key = btn.closest('.disc__row').dataset.key;
+      D().serve(key, 1);
+      renderDiscipline();
+      refreshAll();
+      U.toast('Fecha cumplida.', 'check');
+    });
+
+    const log = $('#disc-log');
+    if (log) on(log, 'click', '[data-act="undo"]', (_, btn) => {
+      const id = btn.closest('.disc__log').dataset.id;
+      D().remove(id);
+      renderDiscipline();
+      refreshAll();
+      U.toast('Tarjeta borrada.', 'info');
+    });
+
+    bind('#btn-clear-discipline', 'click', () => {
+      if (!D().cards.length) return;
+      U.confirmDialog('Borrar las tarjetas', 'Se van las amarillas, las rojas y las fechas cumplidas de todo el grupo.', () => {
+        D().clear();
+        renderDiscipline();
+        refreshAll();
+        U.toast('Registro vacío.', 'info');
+      });
+    });
+  }
+
+  /* ============================================================
+     Pantalla 6 — historial
      ============================================================ */
   function renderHistory() {
     const rankBox = $('#history-rank');
@@ -922,6 +1181,7 @@
   function reload(opts) {
     syncSetupForm();
     refreshAll();
+    renderDiscipline();
     renderHistory();
     setStep(opts && opts.fromLink ? 2 : currentStep, true);
     if (opts && opts.fromLink) U.toast('Convocatoria cargada desde el link.', 'check');
@@ -942,6 +1202,7 @@
     step('lista', bindRoster);
     step('equipos', bindTeams);
     step('figura', bindResult);
+    step('tarjetas', bindDiscipline);
     step('historial', bindHistory);
     step('flyers', bindFlyerModal);
     step('colores', bindSkins);
@@ -958,10 +1219,11 @@
     step('render inicial', () => {
       syncSetupForm();
       refreshAll();
+      renderDiscipline();
       renderHistory();
     });
 
-    const startStep = opts && opts.fromLink ? 2 : U.clamp(U.toInt(store.prefs.step, 1), 1, 5);
+    const startStep = opts && opts.fromLink ? 2 : U.clamp(U.toInt(store.prefs.step, 1), 1, LAST_STEP);
     setStep(store.match.players.length ? startStep : 1, true);
 
     if (opts && opts.fromLink) U.toast('Convocatoria cargada desde el link.', 'check');
@@ -970,5 +1232,5 @@
     HF.kit.loadFonts();
   }
 
-  HF.ui = { init, reload, setStep, refreshAll, openFlyer, buildCallText, buildTeamsText };
+  HF.ui = { init, reload, setStep, refreshAll, renderDiscipline, openFlyer, buildCallText, buildTeamsText };
 })(window);
