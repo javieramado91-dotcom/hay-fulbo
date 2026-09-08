@@ -902,8 +902,55 @@
     }
   }
 
+  /** El parte, listo para pegar en el grupo. */
+  function buildDisciplineText() {
+    const rows = D().rows();
+    const suspendidos = rows.filter((r) => r.pending > 0);
+    const lines = ['⚖️ *PARTE DISCIPLINARIO*', ''];
+
+    if (!suspendidos.length) {
+      lines.push('✅ *No hay suspendidos.* Están todos habilitados.');
+    } else {
+      lines.push('🟥 *No pueden jugar*');
+      suspendidos.forEach((row) => lines.push(`• ${row.name} — debe ${fechasLabel(row.pending)}`));
+    }
+
+    const limpios = rows.filter((r) => r.pending === 0);
+    if (limpios.length) {
+      lines.push('');
+      lines.push('🟨 *Fichas*');
+      limpios.forEach((row) => {
+        const partes = [];
+        if (row.yellows) partes.push(row.yellows === 1 ? '1 amarilla' : row.yellows + ' amarillas');
+        if (row.directReds) partes.push(row.directReds === 1 ? '1 roja' : row.directReds + ' rojas');
+        lines.push(`• ${row.name} — ${partes.join(' · ') || 'sin tarjetas'}`);
+      });
+    }
+
+    lines.push('');
+    lines.push('Cada dos amarillas es una roja. La 1ª roja, 1 fecha; la 2ª, 2; la 3ª, 3.');
+    lines.push('📲 Armado con Hay Fulbo');
+    return lines.join('\n');
+  }
+
   function bindDiscipline() {
     bind('#btn-add-card', 'click', () => openCardModal());
+
+    bind('#btn-flyer-cards', 'click', () => {
+      if (!D().cards.length) {
+        U.toast('Todavía no hay tarjetas para mostrar.', 'info');
+        return;
+      }
+      openFlyer('cards');
+    });
+
+    bind('#btn-copy-cards', 'click', () => {
+      if (!D().cards.length) {
+        U.toast('Todavía no hay tarjetas para mostrar.', 'info');
+        return;
+      }
+      copyToClipboard(buildDisciplineText(), 'Parte copiado. Pegalo en el grupo.');
+    });
     bind('#btn-card-ok', 'click', submitCard);
 
     const tipos = $('#card-type');
@@ -1146,6 +1193,7 @@
       const filename = HF.flyers.filename(currentFlyer, store.match);
       const text = currentFlyer === 'call' ? buildCallText()
         : currentFlyer === 'teams' ? buildTeamsText()
+        : currentFlyer === 'cards' ? buildDisciplineText()
         : store.match.titulo || 'Hay Fulbo';
 
       if (blob && navigator.canShare) {
@@ -1232,5 +1280,5 @@
     HF.kit.loadFonts();
   }
 
-  HF.ui = { init, reload, setStep, refreshAll, renderDiscipline, openFlyer, buildCallText, buildTeamsText };
+  HF.ui = { init, reload, setStep, refreshAll, renderDiscipline, openFlyer, buildCallText, buildTeamsText, buildDisciplineText };
 })(window);

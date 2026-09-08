@@ -17,14 +17,17 @@ Sin backend, sin cuentas, sin build: es HTML, CSS y JavaScript plano.
 | **2 · Lista** | Alta de jugadores con su puesto, botón **Los de siempre** para traer el plantel habitual de un toque, suplentes automáticos al pasarse del cupo, control de quién pagó, importación de listas pegadas de WhatsApp y texto listo para volver a pegar en el grupo. |
 | **3 · Equipos** | Balanceador que reparte a los titulares en dos equipos parejos y los dibuja en formación sobre la cancha. Abajo de todo, **Ir a puntajes y figura** sigue al paso que viene, y **Los armamos en la cancha** saltea el balanceador para siempre. |
 | **4 · Figura** | Puntaje de 1 a 10 por jugador **de a cuartos** (7 · 7,25 · 7,5 · 7,75), goles y elección de la figura del partido. |
-| **5 · Tarjetas** | Amarillas y rojas del grupo con el motivo escrito. Cada dos amarillas sale una roja, y las rojas suspenden de a una fecha más cada vez. |
+| **5 · Tarjetas** | Amarillas y rojas del grupo con el motivo escrito. Cada dos amarillas sale una roja, y las rojas suspenden de a una fecha más cada vez. Tiene su flyer y su texto para pegar en el grupo. |
 | **6 · Historial** | Ranking histórico por promedio, partidos jugados, goles y MVPs de todos los picados guardados. |
 
-### Los tres flyers (1080×1920)
+### Los cuatro flyers (1080×1920)
 
 - **Convocatoria** — cuántos faltan, cuándo, dónde, cuánto sale y la lista completa con los cupos libres.
 - **Formaciones** — los dos equipos plantados sobre una cancha, con camiseta, dorsal y nombre.
 - **Figura** — el MVP en formato figurita de álbum, con puntaje, puesto y el resto de las notas.
+- **Parte disciplinario** — cuántos están suspendidos y por cuántas fechas, con las tarjetas dibujadas
+  y la ficha del grupo. El amarillo y el rojo no salen de la paleta: una amarilla es amarilla en
+  cualquier tema.
 
 Cada flyer se dibuja en `<canvas>` a resolución final y se puede descargar como PNG o mandar
 directo por el menú de compartir del sistema (Web Share API) cuando el navegador lo soporta.

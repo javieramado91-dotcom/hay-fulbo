@@ -645,17 +645,192 @@
   }
 
   /* ============================================================
+     4. TARJETAS
+     ============================================================ */
+  /* Una amarilla es amarilla en cualquier paleta: estos dos no salen del tema. */
+  const CARD_Y = '#ffd23f';
+  const CARD_R = '#ff4444';
+
+  /** Dibuja tarjetitas en fila y devuelve el ancho ocupado. */
+  function paintCardPips(ctx, x, y, reds, yellows, h) {
+    const w = h * 0.7;
+    const gap = h * 0.24;
+    let cx = x;
+    const tile = (color) => {
+      K.fillRR(ctx, cx, y - h / 2, w, h, w * 0.2, color);
+      K.strokeRR(ctx, cx, y - h / 2, w, h, w * 0.2, 'rgba(0,0,0,.4)', 2);
+      cx += w + gap;
+    };
+    for (let i = 0; i < reds; i++) tile(CARD_R);
+    for (let i = 0; i < yellows; i++) tile(CARD_Y);
+    return Math.max(0, cx - gap - x);
+  }
+
+  /** Fila de sancionado: tarjetitas, nombre y las fechas que debe. */
+  function paintSanctionRow(ctx, t, row, x, y, w, h) {
+    K.fillRR(ctx, x, y, w, h, 22, K.rgba(CARD_R, 0.1));
+    K.strokeRR(ctx, x, y, w, h, 22, K.rgba(CARD_R, 0.42), 2);
+
+    const mid = y + h / 2;
+    const pipsW = paintCardPips(ctx, x + 28, mid, Math.min(row.reds, 4), 0, Math.min(46, h * 0.44));
+
+    const fechas = row.pending === 1 ? '1 FECHA' : row.pending + ' FECHAS';
+    K.setFont(ctx, '800', 26, K.FONT_BODY);
+    const chipW = K.measure(ctx, fechas, 3) + 44;
+
+    K.text(ctx, row.name.toUpperCase(), x + 44 + pipsW, mid + 14, {
+      family: K.FONT_COND, weight: '700', size: 44, color: t.ink,
+      maxWidth: w - pipsW - chipW - 110,
+    });
+
+    K.chip(ctx, {
+      x: x + w - 28, y: mid - 26, align: 'right', text: fechas,
+      size: 26, height: 52, radius: 26, padX: 22, tracking: 3,
+      bg: K.rgba(CARD_R, 0.2), fg: '#ffb0b0', border: K.rgba(CARD_R, 0.55),
+    });
+  }
+
+  /** Fila de ficha: nombre a la izquierda, tarjetas a la derecha. */
+  function paintFichaRow(ctx, t, row, x, y, w, h, zebra) {
+    if (zebra) K.fillRR(ctx, x, y, w, h, 14, K.rgba(t.ink, 0.045));
+
+    const mid = y + h / 2;
+    const size = U.clamp(h * 0.56, 30, 44);
+    K.text(ctx, row.name.toUpperCase(), x + 24, mid + size * 0.33, {
+      family: K.FONT_COND, weight: '700', size, color: row.pending > 0 ? '#ffb0b0' : t.ink,
+      maxWidth: w - 300,
+    });
+
+    const cuenta = [];
+    if (row.yellows) cuenta.push(row.yellows + 'A');
+    if (row.directReds) cuenta.push(row.directReds + 'R');
+    K.text(ctx, cuenta.join(' · ') || '—', x + w - 150, mid + 10, {
+      family: K.FONT_BODY, weight: '800', size: 24, color: K.rgba(t.sub, 0.7), align: 'right', tracking: 2,
+    });
+
+    paintCardPips(ctx, x + w - 130, mid, Math.min(row.reds, 3), row.loose ? 1 : 0, Math.min(38, h * 0.62));
+  }
+
+  function renderCards(ctx, data) {
+    const { match, t } = data;
+    const rows = HF.discipline.rows();
+    const suspendidos = rows.filter((r) => r.pending > 0);
+    const fechas = suspendidos.reduce((n, r) => n + r.pending, 0);
+
+    paintStage(ctx, t, { accent: CARD_R });
+    paintFrame(ctx, t);
+    paintBrand(ctx, t, 'Disciplina');
+    paintKicker(ctx, t, 'AMARILLAS Y ROJAS', suspendidos.length ? t.warn : t.accent);
+
+    let y = paintTitle(ctx, t, 'PARTE DISCIPLINARIO', 268, 74, t.ink) + 26;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    K.glow(ctx, W / 2, y + 150, 380, suspendidos.length ? CARD_R : t.accent, 0.18);
+    ctx.restore();
+
+    /* Titular: cuántos no pueden jugar. */
+    if (suspendidos.length) {
+      const n = String(suspendidos.length);
+      const size = K.fit(ctx, n, INNER - 420, { family: K.FONT_DISPLAY, weight: '400', max: 210, min: 110 });
+      K.text(ctx, n, W / 2, y + 190, {
+        family: K.FONT_DISPLAY, weight: '400', size, align: 'center',
+        color: (c, x, w) => K.lg(c, x, y + 40, x + w, y + 200, [[0, '#ffffff'], [0.6, CARD_R], [1, t.warn]]),
+        glow: K.rgba(CARD_R, 0.75), glowBlur: 55,
+      });
+      K.text(ctx, suspendidos.length === 1 ? 'SUSPENDIDO' : 'SUSPENDIDOS', W / 2, y + 256, {
+        family: K.FONT_DISPLAY, weight: '400', size: 62, color: t.ink, align: 'center', tracking: 8,
+      });
+      K.chip(ctx, {
+        x: W / 2, y: y + 306, height: 58, radius: 29, padX: 34, size: 26, tracking: 4,
+        text: (fechas === 1 ? '1 FECHA' : fechas + ' FECHAS') + ' EN TOTAL',
+        bg: K.rgba(CARD_R, 0.16), fg: '#ffb0b0', border: K.rgba(CARD_R, 0.45),
+      });
+      y += 356;
+    } else {
+      K.text(ctx, 'ESTÁN TODOS', W / 2, y + 118, {
+        family: K.FONT_DISPLAY, weight: '400', size: 100, color: K.rgba(t.sub, 0.92),
+        align: 'center', tracking: 6,
+      });
+      K.text(ctx, 'HABILITADOS', W / 2, y + 236, {
+        family: K.FONT_DISPLAY, weight: '400', size: 128, align: 'center', tracking: 4,
+        color: (c, x, w) => K.lg(c, x, y + 140, x + w, y + 250, [[0, '#ffffff'], [0.55, t.accent], [1, t.accent2]]),
+        glow: K.rgba(t.accent, 0.8), glowBlur: 55,
+      });
+      y += 296;
+    }
+
+    /*
+     * Lo que queda hasta el pie se reparte entre los dos bloques: con pocos
+     * jugadores las filas se estiran en vez de dejar medio flyer vacío.
+     */
+    const bottom = CTA_TOP - 72;
+    const HEAD = 52;
+    const sancionados = suspendidos.slice(0, 4);
+    const extra = suspendidos.length > sancionados.length ? 44 : 0;
+
+    let sancionH = 0;
+    let usadoArriba = 0;
+    if (sancionados.length) {
+      sancionH = U.clamp((bottom - y - HEAD - extra) * 0.42 / sancionados.length - 12, 96, 132);
+      usadoArriba = HEAD + sancionados.length * (sancionH + 12) + extra;
+    }
+
+    const fichasLibres = bottom - y - usadoArriba - HEAD;
+    const cabe = Math.min(rows.length, Math.max(0, Math.floor(fichasLibres / 56)));
+    const fichaH = cabe ? U.clamp(fichasLibres / cabe, 56, 88) : 0;
+
+    /* Sin sanciones arriba, el sobrante centra la tabla en vez de irse al pie. */
+    const muestraFichas = cabe >= Math.min(3, rows.length);
+    const sobra = Math.max(0, fichasLibres - cabe * fichaH);
+    const aire = muestraFichas ? sobra / 2 : 0;
+
+    if (sancionados.length) {
+      K.text(ctx, 'NO PUEDEN JUGAR', M + 6, y + 26, {
+        family: K.FONT_BODY, weight: '800', size: 24, color: K.rgba(t.sub, 0.6), tracking: 5,
+      });
+      y += HEAD;
+      sancionados.forEach((row) => {
+        paintSanctionRow(ctx, t, row, M, y, INNER, sancionH);
+        y += sancionH + 12;
+      });
+      if (extra) {
+        K.text(ctx, '+' + (suspendidos.length - sancionados.length) + ' MÁS', W / 2, y + 26, {
+          family: K.FONT_BODY, weight: '800', size: 24, color: K.rgba(t.sub, 0.55), align: 'center', tracking: 4,
+        });
+        y += extra;
+      }
+    }
+
+    if (muestraFichas) {
+      y += aire;
+      K.text(ctx, 'FICHAS DEL GRUPO', M + 6, y + 26, {
+        family: K.FONT_BODY, weight: '800', size: 24, color: K.rgba(t.sub, 0.6), tracking: 5,
+      });
+      y += HEAD;
+      rows.slice(0, cabe).forEach((row, i) => {
+        paintFichaRow(ctx, t, row, M, y, INNER, fichaH, i % 2 === 0);
+        y += fichaH;
+      });
+    }
+
+    paintContextLine(ctx, t, [match.titulo, 'Cada dos amarillas, una roja']);
+    paintCTA(ctx, t, suspendidos.length ? 'FECHAS QUE SE CUMPLEN SIN JUGAR' : 'EL GRUPO ESTÁ AL DÍA');
+  }
+
+  /* ============================================================
      API
      ============================================================ */
   const RENDERERS = {
     call: { fn: renderCall, title: 'Flyer de convocatoria', file: 'convocatoria' },
     teams: { fn: renderTeams, title: 'Flyer de formaciones', file: 'formaciones' },
     mvp: { fn: renderMvp, title: 'Flyer de la figura', file: 'figura' },
+    cards: { fn: renderCards, title: 'Flyer de tarjetas', file: 'tarjetas' },
   };
 
   /**
    * Dibuja un flyer en un canvas de 1080x1920.
-   * @param {string} kind call | teams | mvp
+   * @param {string} kind call | teams | mvp | cards
    */
   async function render(kind, canvas, store, themeId) {
     const spec = RENDERERS[kind];
